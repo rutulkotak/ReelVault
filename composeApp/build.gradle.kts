@@ -6,12 +6,17 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.sqldelight)
 }
 
 kotlin {
     androidTarget {
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
+        compilations.all {
+            compileTaskProvider.configure {
+                compilerOptions {
+                    jvmTarget.set(JvmTarget.JVM_11)
+                }
+            }
         }
     }
     
@@ -29,6 +34,15 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
+
+            // Koin
+            implementation(libs.koin.android)
+
+            // SQLDelight
+            implementation(libs.sqldelight.android)
+
+            // Ktor
+            implementation(libs.ktor.client.okhttp)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -53,9 +67,25 @@ kotlin {
 
             // KotlinX
             implementation(libs.kotlinx.datetime)
+
+            // Ktor
+            implementation(libs.ktor.client.core)
+
+            // SQLDelight
+            implementation(libs.sqldelight.runtime)
+            implementation(libs.sqldelight.coroutines)
+        }
+        iosMain.dependencies {
+            // SQLDelight
+            implementation(libs.sqldelight.native)
+
+            // Ktor
+            implementation(libs.ktor.client.darwin)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(libs.ktor.client.mock)
+            implementation(libs.kotlinx.coroutines.test)
         }
     }
 }
@@ -91,3 +121,10 @@ dependencies {
     debugImplementation(libs.compose.uiTooling)
 }
 
+sqldelight {
+    databases {
+        create("ReelVaultDatabase") {
+            packageName.set("com.reelvault.app.database")
+        }
+    }
+}

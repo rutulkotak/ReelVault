@@ -1,6 +1,6 @@
 package com.reelvault.app.domain.model
 
-import kotlin.time.Instant
+import kotlinx.datetime.Instant
 
 /**
  * Domain model representing a saved reel in the user's library.

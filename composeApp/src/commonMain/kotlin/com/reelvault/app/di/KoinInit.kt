@@ -10,7 +10,11 @@ import org.koin.dsl.KoinAppDeclaration
 fun initKoin(appDeclaration: KoinAppDeclaration = {}) = startKoin {
     appDeclaration()
     modules(
-        // Core modules
+        // Platform-specific module (must be first to provide platform dependencies)
+        platformModule,
+        // Data layer module
+        dataModule,
+        // Feature modules
         libraryModule,
         // Add more feature modules here
     )

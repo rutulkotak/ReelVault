@@ -1,0 +1,43 @@
+-- ReelVault Database Schema
+-- Stores saved reels in the user's library
+
+CREATE TABLE IF NOT EXISTS Reel (
+    id TEXT NOT NULL PRIMARY KEY,
+    url TEXT NOT NULL UNIQUE,
+    title TEXT NOT NULL,
+    thumbnailUrl TEXT NOT NULL,
+    tags TEXT NOT NULL,  -- Stored as comma-separated string
+    createdAt INTEGER NOT NULL  -- Unix timestamp in milliseconds
+);
+
+-- Queries
+
+-- Get all saved reels ordered by creation date (newest first)
+getAllReels:
+SELECT * FROM Reel
+ORDER BY createdAt DESC;
+
+-- Get a single reel by ID
+getReelById:
+SELECT * FROM Reel
+WHERE id = ?;
+
+-- Get a reel by URL
+getReelByUrl:
+SELECT * FROM Reel
+WHERE url = ?;
+
+-- Insert a new reel
+insertReel:
+INSERT OR REPLACE INTO Reel(id, url, title, thumbnailUrl, tags, createdAt)
+VALUES (?, ?, ?, ?, ?, ?);
+
+-- Delete a reel by ID
+deleteReelById:
+DELETE FROM Reel
+WHERE id = ?;
+
+-- Check if a reel with given URL exists
+isReelSaved:
+SELECT COUNT(*) > 0 FROM Reel
+WHERE url = ?;
