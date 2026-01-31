@@ -62,5 +62,6 @@ object LibraryContract {
         data class NavigateToReelDetail(val reel: Reel) : Effect
         data class ShowDeleteConfirmation(val reelId: String) : Effect
         data object ReelDeleted : Effect
+        data class OpenUrl(val url: String) : Effect
     }
 }

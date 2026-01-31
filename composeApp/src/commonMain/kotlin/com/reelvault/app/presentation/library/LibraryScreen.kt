@@ -1,15 +1,12 @@
 package com.reelvault.app.presentation.library
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -17,7 +14,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -25,15 +24,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.koin.koinScreenModel
+import com.reelvault.app.presentation.components.EmptyLibraryState
+import com.reelvault.app.presentation.components.ReelGrid
+import com.reelvault.app.presentation.theme.AuroraColors
+import com.reelvault.app.utils.PlatformUrlOpener
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
  * Voyager Screen for the Library feature.
- * Displays the user's saved reels collection.
+ * Displays the user's saved reels collection with Aurora UI.
  */
 class LibraryScreen : Screen {
 
@@ -51,11 +54,14 @@ class LibraryScreen : Screen {
                     is LibraryContract.Effect.ShowError -> {
                         snackbarHostState.showSnackbar(effect.message)
                     }
+                    is LibraryContract.Effect.OpenUrl -> {
+                        PlatformUrlOpener.openUrl(effect.url)
+                    }
                     is LibraryContract.Effect.NavigateToReelDetail -> {
-                        // TODO: Navigate to reel detail screen
+                        // Future: Navigate to detail screen
                     }
                     is LibraryContract.Effect.ShowDeleteConfirmation -> {
-                        // TODO: Show delete confirmation dialog
+                        // Future: Show delete dialog
                     }
                     is LibraryContract.Effect.ReelDeleted -> {
                         snackbarHostState.showSnackbar("Reel deleted")
@@ -65,12 +71,26 @@ class LibraryScreen : Screen {
         }
 
         Scaffold(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(AuroraColors.MidnightIndigo),
             topBar = {
                 TopAppBar(
-                    title = { Text("My Library") }
+                    title = {
+                        Text(
+                            "ReelVault",
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = AuroraColors.TextPrimary
+                        )
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = AuroraColors.DeepIndigo,
+                        titleContentColor = AuroraColors.TextPrimary
+                    )
                 )
             },
-            snackbarHost = { SnackbarHost(snackbarHostState) }
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            containerColor = AuroraColors.MidnightIndigo
         ) { paddingValues ->
             LibraryContent(
                 state = state,
@@ -81,6 +101,9 @@ class LibraryScreen : Screen {
     }
 }
 
+/**
+ * Main content area for the Library screen.
+ */
 @Composable
 private fun LibraryContent(
     state: LibraryContract.State,
@@ -93,21 +116,23 @@ private fun LibraryContent(
     ) {
         when {
             state.isLoading -> {
-                CircularProgressIndicator()
+                LoadingState()
             }
             state.errorMessage != null -> {
-                ErrorContent(
+                ErrorState(
                     message = state.errorMessage,
                     onRetry = { onIntent(LibraryContract.Intent.Refresh) }
                 )
             }
             state.filteredReels.isEmpty() -> {
-                EmptyLibraryContent()
+                EmptyLibraryState()
             }
             else -> {
                 ReelGrid(
                     reels = state.filteredReels,
-                    onReelClick = { reel -> onIntent(LibraryContract.Intent.ReelClicked(reel)) },
+                    onReelClick = { reel ->
+                        onIntent(LibraryContract.Intent.ReelClicked(reel))
+                    },
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -115,52 +140,11 @@ private fun LibraryContent(
     }
 }
 
+/**
+ * Loading state with Aurora-themed spinner.
+ */
 @Composable
-private fun ReelGrid(
-    reels: List<com.reelvault.app.domain.model.Reel>,
-    onReelClick: (com.reelvault.app.domain.model.Reel) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 160.dp),
-        modifier = modifier,
-        contentPadding = PaddingValues(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        items(
-            items = reels,
-            key = { it.id }
-        ) { reel ->
-            ReelGridItem(
-                reel = reel,
-                onClick = { onReelClick(reel) }
-            )
-        }
-    }
-}
-
-@Composable
-private fun ReelGridItem(
-    reel: com.reelvault.app.domain.model.Reel,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    // TODO: Implement reel card UI with thumbnail, title, and tags
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(8.dp)
-    ) {
-        Text(
-            text = reel.title,
-            style = MaterialTheme.typography.titleSmall
-        )
-    }
-}
-
-@Composable
-private fun EmptyLibraryContent(
+private fun LoadingState(
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -168,38 +152,54 @@ private fun EmptyLibraryContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(
-            text = "Your library is empty",
-            style = MaterialTheme.typography.headlineSmall
-        )
-        Text(
-            text = "Save reels to see them here",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+        CircularProgressIndicator(
+            modifier = Modifier.size(48.dp),
+            color = AuroraColors.SoftViolet,
+            trackColor = AuroraColors.LightCharcoal
         )
     }
 }
 
+/**
+ * Error state with retry button.
+ */
 @Composable
-private fun ErrorContent(
+private fun ErrorState(
     message: String,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier,
+        modifier = modifier.padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Text(
+            text = "⚠️",
+            style = MaterialTheme.typography.displayMedium
+        )
+        Text(
             text = "Something went wrong",
-            style = MaterialTheme.typography.headlineSmall
+            style = MaterialTheme.typography.headlineSmall,
+            color = AuroraColors.TextPrimary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 16.dp)
         )
         Text(
             text = message,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.error
+            color = AuroraColors.TextSecondary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 8.dp)
         )
-        // TODO: Add retry button
+        TextButton(
+            onClick = onRetry,
+            modifier = Modifier.padding(top = 16.dp)
+        ) {
+            Text(
+                text = "Try Again",
+                color = AuroraColors.BrightIndigo
+            )
+        }
     }
 }

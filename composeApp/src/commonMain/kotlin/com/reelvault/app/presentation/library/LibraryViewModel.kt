@@ -79,6 +79,6 @@ class LibraryViewModel(
     }
 
     private fun onReelClicked(reel: Reel) {
-        emitEffect(LibraryContract.Effect.NavigateToReelDetail(reel))
+        emitEffect(LibraryContract.Effect.OpenUrl(reel.url))
     }
 }
