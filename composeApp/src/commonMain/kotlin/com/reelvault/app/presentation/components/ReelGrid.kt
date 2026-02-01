@@ -20,13 +20,17 @@ import com.reelvault.app.domain.model.Reel
  * @param onReelClick Callback when a reel is clicked
  * @param modifier Optional modifier
  * @param columns Number of columns (defaults to 2)
+ * @param selectedItemIds Set of selected reel IDs for multi-selection mode
+ * @param onReelLongClick Callback when a reel is long-pressed (for selection)
  */
 @Composable
 fun ReelGrid(
     reels: List<Reel>,
     onReelClick: (Reel) -> Unit,
     modifier: Modifier = Modifier,
-    columns: Int = 2
+    columns: Int = 2,
+    selectedItemIds: Set<String> = emptySet(),
+    onReelLongClick: ((Reel) -> Unit)? = null
 ) {
     LazyVerticalStaggeredGrid(
         columns = StaggeredGridCells.Fixed(columns),
@@ -41,7 +45,9 @@ fun ReelGrid(
         ) { reel ->
             ReelCard(
                 reel = reel,
-                onClick = { onReelClick(reel) }
+                onClick = { onReelClick(reel) },
+                isSelected = reel.id in selectedItemIds,
+                onLongClick = onReelLongClick?.let { { it(reel) } }
             )
         }
     }

@@ -37,7 +37,9 @@ import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import com.reelvault.app.presentation.components.EmptyLibraryState
+import com.reelvault.app.presentation.components.LibraryHeader
 import com.reelvault.app.presentation.components.ReelGrid
+import com.reelvault.app.presentation.components.SelectionActionBar
 import com.reelvault.app.presentation.settings.SettingsScreen
 import com.reelvault.app.presentation.theme.AuroraColors
 import com.reelvault.app.utils.PlatformUrlOpener
@@ -76,6 +78,9 @@ class LibraryScreen : Screen {
                     }
                     is LibraryContract.Effect.ReelDeleted -> {
                         snackbarHostState.showSnackbar("Reel deleted")
+                    }
+                    is LibraryContract.Effect.ItemsDeleted -> {
+                        snackbarHostState.showSnackbar("${effect.count} item(s) deleted")
                     }
                     is LibraryContract.Effect.ReelSaved -> {
                         snackbarHostState.showSnackbar("✅ Saved: ${effect.title}")
@@ -139,31 +144,88 @@ private fun LibraryContent(
     modifier: Modifier = Modifier
 ) {
     Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+        modifier = modifier.fillMaxSize()
     ) {
-        when {
-            state.isLoading -> {
-                LoadingState()
-            }
-            state.errorMessage != null -> {
-                ErrorState(
-                    message = state.errorMessage,
-                    onRetry = { onIntent(LibraryContract.Intent.Refresh) }
-                )
-            }
-            state.filteredReels.isEmpty() -> {
-                EmptyLibraryState()
-            }
-            else -> {
-                ReelGrid(
-                    reels = state.filteredReels,
-                    onReelClick = { reel ->
-                        onIntent(LibraryContract.Intent.ReelClicked(reel))
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // Header with Search and Filters (always visible when we have reels)
+            if (!state.isLoading && state.reels.isNotEmpty()) {
+                LibraryHeader(
+                    searchQuery = state.searchQuery,
+                    onSearchQueryChange = { query ->
+                        onIntent(LibraryContract.Intent.UpdateSearchQuery(query))
                     },
-                    modifier = Modifier.fillMaxSize()
+                    selectedPlatform = state.selectedPlatform,
+                    onPlatformSelected = { platform ->
+                        onIntent(LibraryContract.Intent.FilterByPlatform(platform))
+                    },
+                    resultsCount = state.filteredReels.size
                 )
             }
+
+            // Main Content Area
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                when {
+                    state.isLoading -> {
+                        LoadingState()
+                    }
+                    state.errorMessage != null -> {
+                        ErrorState(
+                            message = state.errorMessage,
+                            onRetry = { onIntent(LibraryContract.Intent.Refresh) }
+                        )
+                    }
+                    state.filteredReels.isEmpty() -> {
+                        EmptyLibraryState()
+                    }
+                    else -> {
+                        ReelGrid(
+                            reels = state.filteredReels,
+                            onReelClick = { reel ->
+                                // If in selection mode, toggle selection, otherwise open URL
+                                if (state.selectedItemIds.isNotEmpty()) {
+                                    onIntent(LibraryContract.Intent.ToggleSelection(reel.id))
+                                } else {
+                                    onIntent(LibraryContract.Intent.ReelClicked(reel))
+                                }
+                            },
+                            selectedItemIds = state.selectedItemIds,
+                            onReelLongClick = { reel ->
+                                onIntent(LibraryContract.Intent.ToggleSelection(reel.id))
+                            },
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                }
+            }
+        }
+
+        // Selection Action Bar (Bottom)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = 0.dp),
+            contentAlignment = Alignment.BottomCenter
+        ) {
+            SelectionActionBar(
+                selectedCount = state.selectedItemIds.size,
+                onDeleteClicked = {
+                    onIntent(LibraryContract.Intent.DeleteSelectedItems)
+                },
+                onClearSelection = {
+                    // Clear all selections
+                    state.selectedItemIds.forEach { id ->
+                        onIntent(LibraryContract.Intent.ToggleSelection(id))
+                    }
+                },
+                isVisible = state.selectedItemIds.isNotEmpty()
+            )
         }
 
         // Overlay for capturing state

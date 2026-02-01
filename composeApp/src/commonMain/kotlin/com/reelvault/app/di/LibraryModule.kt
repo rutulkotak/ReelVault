@@ -1,5 +1,6 @@
 package com.reelvault.app.di
 
+import com.reelvault.app.domain.usecase.DeleteReelsUseCase
 import com.reelvault.app.domain.usecase.GetSavedReelsUseCase
 import com.reelvault.app.domain.usecase.SaveReelFromUrlUseCase
 import com.reelvault.app.domain.usecase.SaveReelUseCase
@@ -17,6 +18,7 @@ val libraryModule = module {
     factoryOf(::GetSavedReelsUseCase)
     factoryOf(::SaveReelUseCase)
     factoryOf(::SaveReelFromUrlUseCase)
+    factoryOf(::DeleteReelsUseCase)
 
     // ViewModel
     viewModelOf(::LibraryViewModel)

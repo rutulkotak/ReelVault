@@ -52,6 +52,12 @@ class LibraryRepositoryImpl(
         queries.deleteReelById(id)
     }
 
+    override suspend fun deleteReels(ids: List<String>) = withContext(Dispatchers.IO) {
+        ids.forEach { id ->
+            queries.deleteReelById(id)
+        }
+    }
+
     override suspend fun isReelSaved(url: String): Boolean = withContext(Dispatchers.IO) {
         queries.isReelSaved(url).executeAsOne()
     }

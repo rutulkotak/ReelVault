@@ -30,6 +30,11 @@ interface LibraryRepository {
     suspend fun deleteReel(id: String)
 
     /**
+     * Delete multiple reels from the library.
+     */
+    suspend fun deleteReels(ids: List<String>)
+
+    /**
      * Check if a reel exists in the library.
      */
     suspend fun isReelSaved(url: String): Boolean

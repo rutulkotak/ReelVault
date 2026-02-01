@@ -34,6 +34,7 @@ object AuroraColors {
     val AuroraGreen = Color(0xFF30D158)
     val AuroraBlue = Color(0xFF0A84FF)
     val AuroraRed = Color(0xFFFF453A)
+    val ErrorRed = AuroraRed  // Alias for error states
     val AuroraYellow = Color(0xFFFFD60A)
 
     // Glassmorphism Overlay

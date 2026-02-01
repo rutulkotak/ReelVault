@@ -19,7 +19,9 @@ object LibraryContract {
         val reels: List<Reel> = emptyList(),
         val errorMessage: String? = null,
         val searchQuery: String = "",
-        val selectedTags: Set<String> = emptySet()
+        val selectedTags: Set<String> = emptySet(),
+        val selectedPlatform: String? = null,  // null = "All"
+        val selectedItemIds: Set<String> = emptySet()  // For multi-selection
     ) : MviContract.UiState {
 
         /**
@@ -32,7 +34,9 @@ object LibraryContract {
                     reel.tags.any { it.contains(searchQuery, ignoreCase = true) }
                 val matchesTags = selectedTags.isEmpty() ||
                     reel.tags.any { it in selectedTags }
-                matchesSearch && matchesTags
+                val matchesPlatform = selectedPlatform == null ||
+                    reel.url.contains(selectedPlatform, ignoreCase = true)
+                matchesSearch && matchesTags && matchesPlatform
             }
 
         /**
@@ -49,9 +53,13 @@ object LibraryContract {
         data object LoadReels : Intent
         data object Refresh : Intent
         data class SearchQueryChanged(val query: String) : Intent
+        data class UpdateSearchQuery(val query: String) : Intent  // Alias for SearchQueryChanged
         data class TagSelected(val tag: String) : Intent
         data class TagDeselected(val tag: String) : Intent
         data object ClearFilters : Intent
+        data class FilterByPlatform(val platform: String?) : Intent  // null = "All"
+        data class ToggleSelection(val id: String) : Intent
+        data object DeleteSelectedItems : Intent
         data class DeleteReel(val reelId: String) : Intent
         data class ReelClicked(val reel: Reel) : Intent
 
@@ -70,6 +78,7 @@ object LibraryContract {
         data class NavigateToReelDetail(val reel: Reel) : Effect
         data class ShowDeleteConfirmation(val reelId: String) : Effect
         data object ReelDeleted : Effect
+        data class ItemsDeleted(val count: Int) : Effect
         data class OpenUrl(val url: String) : Effect
 
         /**

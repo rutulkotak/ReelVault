@@ -17,6 +17,13 @@ getAllReels:
 SELECT * FROM Reel
 ORDER BY createdAt DESC;
 
+-- Search reels by title or tags
+searchReels:
+SELECT * FROM Reel
+WHERE title LIKE '%' || ? || '%'
+   OR tags LIKE '%' || ? || '%'
+ORDER BY createdAt DESC;
+
 -- Get a single reel by ID
 getReelById:
 SELECT * FROM Reel

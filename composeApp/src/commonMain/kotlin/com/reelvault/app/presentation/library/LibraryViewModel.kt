@@ -2,6 +2,7 @@ package com.reelvault.app.presentation.library
 
 import androidx.lifecycle.viewModelScope
 import com.reelvault.app.domain.model.Reel
+import com.reelvault.app.domain.usecase.DeleteReelsUseCase
 import com.reelvault.app.domain.usecase.GetSavedReelsUseCase
 import com.reelvault.app.domain.usecase.SaveReelFromUrlUseCase
 import com.reelvault.app.presentation.base.BaseViewModel
@@ -17,7 +18,8 @@ import kotlinx.coroutines.launch
  */
 class LibraryViewModel(
     private val getSavedReelsUseCase: GetSavedReelsUseCase,
-    private val saveReelFromUrlUseCase: SaveReelFromUrlUseCase
+    private val saveReelFromUrlUseCase: SaveReelFromUrlUseCase,
+    private val deleteReelsUseCase: DeleteReelsUseCase
 ) : BaseViewModel<LibraryContract.State, LibraryContract.Intent, LibraryContract.Effect>(
     initialState = LibraryContract.State()
 ) {
@@ -31,9 +33,13 @@ class LibraryViewModel(
             is LibraryContract.Intent.LoadReels -> loadReels()
             is LibraryContract.Intent.Refresh -> loadReels()
             is LibraryContract.Intent.SearchQueryChanged -> onSearchQueryChanged(intent.query)
+            is LibraryContract.Intent.UpdateSearchQuery -> onSearchQueryChanged(intent.query)
             is LibraryContract.Intent.TagSelected -> onTagSelected(intent.tag)
             is LibraryContract.Intent.TagDeselected -> onTagDeselected(intent.tag)
             is LibraryContract.Intent.ClearFilters -> onClearFilters()
+            is LibraryContract.Intent.FilterByPlatform -> onFilterByPlatform(intent.platform)
+            is LibraryContract.Intent.ToggleSelection -> onToggleSelection(intent.id)
+            is LibraryContract.Intent.DeleteSelectedItems -> onDeleteSelectedItems()
             is LibraryContract.Intent.DeleteReel -> onDeleteReel(intent.reelId)
             is LibraryContract.Intent.ReelClicked -> onReelClicked(intent.reel)
             is LibraryContract.Intent.SaveReel -> onSaveReel(intent.url)
@@ -75,7 +81,39 @@ class LibraryViewModel(
     }
 
     private fun onClearFilters() {
-        updateState { copy(searchQuery = "", selectedTags = emptySet()) }
+        updateState { copy(searchQuery = "", selectedTags = emptySet(), selectedPlatform = null) }
+    }
+
+    private fun onFilterByPlatform(platform: String?) {
+        updateState { copy(selectedPlatform = platform) }
+    }
+
+    private fun onToggleSelection(id: String) {
+        updateState {
+            val newSelection = if (id in selectedItemIds) {
+                selectedItemIds - id
+            } else {
+                selectedItemIds + id
+            }
+            copy(selectedItemIds = newSelection)
+        }
+    }
+
+    private fun onDeleteSelectedItems() {
+        val itemsToDelete = currentState.selectedItemIds.toList()
+        if (itemsToDelete.isEmpty()) return
+
+        viewModelScope.launch {
+            val result = deleteReelsUseCase(itemsToDelete)
+            if (result.isSuccess) {
+                updateState { copy(selectedItemIds = emptySet()) }
+                emitEffect(LibraryContract.Effect.ItemsDeleted(itemsToDelete.size))
+            } else {
+                emitEffect(LibraryContract.Effect.ShowError(
+                    "Failed to delete items: ${result.exceptionOrNull()?.message}"
+                ))
+            }
+        }
     }
 
     private fun onDeleteReel(reelId: String) {

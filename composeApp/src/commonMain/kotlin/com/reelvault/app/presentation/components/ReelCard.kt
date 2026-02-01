@@ -1,8 +1,10 @@
 package com.reelvault.app.presentation.components
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,10 +15,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,6 +46,8 @@ import io.kamel.image.asyncPainterResource
  *
  * @param reel The reel to display
  * @param onClick Callback when the card is clicked
+ * @param isSelected Whether this card is in selected state
+ * @param onLongClick Optional callback for long press (enables selection mode)
  * @param modifier Optional modifier
  */
 @OptIn(ExperimentalLayoutApi::class)
@@ -47,18 +55,34 @@ import io.kamel.image.asyncPainterResource
 fun ReelCard(
     reel: Reel,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isSelected: Boolean = false,
+    onLongClick: (() -> Unit)? = null
 ) {
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .then(
+                if (onLongClick != null) {
+                    Modifier.combinedClickable(
+                        onClick = onClick,
+                        onLongClick = onLongClick
+                    )
+                } else {
+                    Modifier.clickable(onClick = onClick)
+                }
+            )
+            .border(
+                width = if (isSelected) 3.dp else 0.dp,
+                color = if (isSelected) AuroraColors.SoftViolet else Color.Transparent,
+                shape = RoundedCornerShape(16.dp)
+            ),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = AuroraColors.MediumCharcoal
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = 4.dp,
+            defaultElevation = if (isSelected) 8.dp else 4.dp,
             pressedElevation = 8.dp
         )
     ) {
@@ -122,6 +146,29 @@ fun ReelCard(
                             )
                         )
                 )
+
+                // Selection Overlay
+                if (isSelected) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(AuroraColors.SoftViolet.copy(alpha = 0.4f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "Selected",
+                            tint = AuroraColors.TextPrimary,
+                            modifier = Modifier
+                                .size(64.dp)
+                                .background(
+                                    color = AuroraColors.SoftViolet,
+                                    shape = CircleShape
+                                )
+                                .padding(8.dp)
+                        )
+                    }
+                }
             }
 
             // Content section
