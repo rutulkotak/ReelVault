@@ -10,10 +10,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -36,10 +39,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
+import com.reelvault.app.presentation.collections.CollectionsScreen
 import com.reelvault.app.presentation.components.EmptyLibraryState
 import com.reelvault.app.presentation.components.LibraryHeader
 import com.reelvault.app.presentation.components.ReelGrid
 import com.reelvault.app.presentation.components.SelectionActionBar
+import com.reelvault.app.presentation.detail.ReelDetailScreen
 import com.reelvault.app.presentation.settings.SettingsScreen
 import com.reelvault.app.presentation.theme.AuroraColors
 import com.reelvault.app.utils.PlatformUrlOpener
@@ -58,7 +64,7 @@ class LibraryScreen : Screen {
         val viewModel: LibraryViewModel = koinViewModel()
         val state by viewModel.uiState.collectAsState()
         val snackbarHostState = remember { SnackbarHostState() }
-        val navigator = LocalNavigator.current
+        val navigator = LocalNavigator.currentOrThrow
 
         // Handle side effects
         LaunchedEffect(Unit) {
@@ -71,7 +77,25 @@ class LibraryScreen : Screen {
                         PlatformUrlOpener.openUrl(effect.url)
                     }
                     is LibraryContract.Effect.NavigateToReelDetail -> {
-                        // Future: Navigate to detail screen
+                        // Navigate to detail screen
+                        navigator.push(
+                            ReelDetailScreen(
+                                reel = effect.reel,
+                                collections = emptyList(), // TODO: Get collections from ViewModel
+                                onSave = { title, notes, tags, collectionId ->
+                                    viewModel.onIntent(
+                                        LibraryContract.Intent.UpdateReelDetails(
+                                            id = effect.reel.id,
+                                            title = title,
+                                            notes = notes,
+                                            tags = tags,
+                                            collectionId = collectionId
+                                        )
+                                    )
+                                    navigator.pop()
+                                }
+                            )
+                        )
                     }
                     is LibraryContract.Effect.ShowDeleteConfirmation -> {
                         // Future: Show delete dialog
@@ -115,7 +139,16 @@ class LibraryScreen : Screen {
                         )
                     },
                     actions = {
-                        IconButton(onClick = { navigator?.push(SettingsScreen()) }) {
+                        // Collections button
+                        IconButton(onClick = { navigator.push(CollectionsScreen()) }) {
+                            Icon(
+                                imageVector = Icons.Default.Folder,
+                                contentDescription = "Collections",
+                                tint = AuroraColors.SoftViolet
+                            )
+                        }
+                        // Settings button
+                        IconButton(onClick = { navigator.push(SettingsScreen()) }) {
                             Text(
                                 text = "⚙️",
                                 style = MaterialTheme.typography.headlineSmall
@@ -134,6 +167,7 @@ class LibraryScreen : Screen {
             LibraryContent(
                 state = state,
                 onIntent = viewModel::onIntent,
+                navigator = navigator,
                 modifier = Modifier.padding(paddingValues)
             )
         }
@@ -147,6 +181,7 @@ class LibraryScreen : Screen {
 private fun LibraryContent(
     state: LibraryContract.State,
     onIntent: (LibraryContract.Intent) -> Unit,
+    navigator: cafe.adriel.voyager.navigator.Navigator,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -193,12 +228,20 @@ private fun LibraryContent(
                     else -> {
                         ReelGrid(
                             reels = state.filteredReels,
-                            onReelClick = { reel ->
-                                // If in selection mode, toggle selection, otherwise open URL
+                            onReelThumbnailClick = { reel ->
+                                // Thumbnail click: Open in external app or toggle selection
                                 if (state.selectedItemIds.isNotEmpty()) {
                                     onIntent(LibraryContract.Intent.ToggleSelection(reel.id))
                                 } else {
                                     onIntent(LibraryContract.Intent.ReelClicked(reel))
+                                }
+                            },
+                            onReelContentClick = { reel ->
+                                // Content click: Navigate to detail screen or toggle selection
+                                if (state.selectedItemIds.isNotEmpty()) {
+                                    onIntent(LibraryContract.Intent.ToggleSelection(reel.id))
+                                } else {
+                                    onIntent(LibraryContract.Intent.NavigateToDetail(reel))
                                 }
                             },
                             selectedItemIds = state.selectedItemIds,

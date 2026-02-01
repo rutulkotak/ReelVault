@@ -53,7 +53,9 @@ class CollectionsScreen : Screen {
                     snackbarHostState.showSnackbar("Collection '${effect.name}' created")
                 }
                 is CollectionsContract.Effect.NavigateToCollectionDetail -> {
-                    // Navigate to library filtered by this collection
+                    // Pop back to library - library will need to filter by this collection
+                    // Note: In production, you'd use Voyager's result APIs or a shared state
+                    snackbarHostState.showSnackbar("Filter by: ${effect.collection.name}")
                     navigator.pop()
                 }
             }

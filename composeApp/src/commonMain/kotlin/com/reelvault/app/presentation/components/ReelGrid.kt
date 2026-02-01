@@ -17,7 +17,8 @@ import com.reelvault.app.domain.model.Reel
  * Optimized for the Aurora UI with proper spacing and responsiveness.
  *
  * @param reels List of reels to display
- * @param onReelClick Callback when a reel is clicked
+ * @param onReelThumbnailClick Callback when a reel thumbnail is clicked (opens external app)
+ * @param onReelContentClick Callback when a reel content area is clicked (navigates to detail)
  * @param modifier Optional modifier
  * @param columns Number of columns (defaults to 2)
  * @param selectedItemIds Set of selected reel IDs for multi-selection mode
@@ -26,12 +27,15 @@ import com.reelvault.app.domain.model.Reel
 @Composable
 fun ReelGrid(
     reels: List<Reel>,
-    onReelClick: (Reel) -> Unit,
+    onReelThumbnailClick: (Reel) -> Unit,
+    onReelContentClick: (Reel) -> Unit,
     modifier: Modifier = Modifier,
     columns: Int = 2,
     selectedItemIds: Set<String> = emptySet(),
     onReelLongClick: ((Reel) -> Unit)? = null
 ) {
+    val isSelectionMode = selectedItemIds.isNotEmpty()
+
     LazyVerticalStaggeredGrid(
         columns = StaggeredGridCells.Fixed(columns),
         modifier = modifier.fillMaxSize(),
@@ -45,9 +49,11 @@ fun ReelGrid(
         ) { reel ->
             ReelCard(
                 reel = reel,
-                onClick = { onReelClick(reel) },
+                onThumbnailClick = { onReelThumbnailClick(reel) },
+                onContentClick = { onReelContentClick(reel) },
                 isSelected = reel.id in selectedItemIds,
-                onLongClick = onReelLongClick?.let { { it(reel) } }
+                onLongClick = onReelLongClick?.let { { it(reel) } },
+                isSelectionMode = isSelectionMode
             )
         }
     }

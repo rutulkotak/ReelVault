@@ -45,33 +45,27 @@ import io.kamel.image.asyncPainterResource
  * Implements glassmorphism design with Aurora theming.
  *
  * @param reel The reel to display
- * @param onClick Callback when the card is clicked
+ * @param onThumbnailClick Callback when thumbnail is clicked (opens external app)
+ * @param onContentClick Callback when content area is clicked (navigates to detail screen)
  * @param isSelected Whether this card is in selected state
  * @param onLongClick Optional callback for long press (enables selection mode)
+ * @param isSelectionMode Whether the library is in selection mode
  * @param modifier Optional modifier
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ReelCard(
     reel: Reel,
-    onClick: () -> Unit,
+    onThumbnailClick: () -> Unit,
+    onContentClick: () -> Unit,
     modifier: Modifier = Modifier,
     isSelected: Boolean = false,
-    onLongClick: (() -> Unit)? = null
+    onLongClick: (() -> Unit)? = null,
+    isSelectionMode: Boolean = false
 ) {
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .then(
-                if (onLongClick != null) {
-                    Modifier.combinedClickable(
-                        onClick = onClick,
-                        onLongClick = onLongClick
-                    )
-                } else {
-                    Modifier.clickable(onClick = onClick)
-                }
-            )
             .border(
                 width = if (isSelected) 3.dp else 0.dp,
                 color = if (isSelected) AuroraColors.SoftViolet else Color.Transparent,
@@ -89,12 +83,34 @@ fun ReelCard(
         Column(
             modifier = Modifier.fillMaxWidth()
         ) {
-            // Thumbnail with gradient overlay
+            // Thumbnail with gradient overlay - Click to open in external app
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(9f / 16f) // Instagram reel aspect ratio
                     .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                    .then(
+                        if (onLongClick != null) {
+                            Modifier.combinedClickable(
+                                onClick = {
+                                    if (isSelectionMode) {
+                                        onLongClick()
+                                    } else {
+                                        onThumbnailClick()
+                                    }
+                                },
+                                onLongClick = onLongClick
+                            )
+                        } else {
+                            Modifier.clickable {
+                                if (isSelectionMode) {
+                                    // In selection mode without long click, do nothing
+                                } else {
+                                    onThumbnailClick()
+                                }
+                            }
+                        }
+                    )
             ) {
                 // Image
                 KamelImage(
@@ -171,10 +187,17 @@ fun ReelCard(
                 }
             }
 
-            // Content section
+            // Content section - Click to navigate to detail screen
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .clickable {
+                        if (isSelectionMode) {
+                            onLongClick?.invoke()
+                        } else {
+                            onContentClick()
+                        }
+                    }
                     .padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
