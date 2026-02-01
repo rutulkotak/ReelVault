@@ -2,7 +2,7 @@ package com.reelvault.app
 
 import androidx.compose.runtime.Composable
 import cafe.adriel.voyager.navigator.Navigator
-import com.reelvault.app.presentation.library.LibraryScreen
+import com.reelvault.app.presentation.splash.SplashScreen
 import com.reelvault.app.presentation.theme.AuroraTheme
 
 /**
@@ -13,7 +13,8 @@ import com.reelvault.app.presentation.theme.AuroraTheme
 fun App() {
     AuroraTheme {
         Navigator(
-            LibraryScreen()
+            SplashScreen()
         )
     }
 }
+

@@ -14,6 +14,8 @@ fun initKoin(appDeclaration: KoinAppDeclaration = {}) = startKoin {
         platformModule,
         // Data layer module
         dataModule,
+        // Settings and Growth features
+        settingsModule,
         // Feature modules
         libraryModule,
         // Add more feature modules here

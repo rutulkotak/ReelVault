@@ -17,6 +17,7 @@ kotlin = "2.3.0"
 kotlinx-datetime = "0.6.1"
 ktor = "3.0.2"
 material3 = "1.10.0-alpha05"
+multiplatformSettings = "1.2.0"
 sqldelight = "2.0.2"
 voyager = "1.1.0-beta03"
 
@@ -71,6 +72,10 @@ sqldelight-native = { module = "app.cash.sqldelight:native-driver", version.ref 
 
 # Kamel - Image loading
 kamel-image = { module = "media.kamel:kamel-image", version.ref = "kamel" }
+
+# Multiplatform Settings
+multiplatform-settings = { module = "com.russhwolf:multiplatform-settings", version.ref = "multiplatformSettings" }
+multiplatform-settings-noarg = { module = "com.russhwolf:multiplatform-settings-no-arg", version.ref = "multiplatformSettings" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

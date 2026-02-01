@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -27,8 +28,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.navigator.LocalNavigator
 import com.reelvault.app.presentation.components.EmptyLibraryState
 import com.reelvault.app.presentation.components.ReelGrid
+import com.reelvault.app.presentation.settings.SettingsScreen
 import com.reelvault.app.presentation.theme.AuroraColors
 import com.reelvault.app.utils.PlatformUrlOpener
 import kotlinx.coroutines.flow.collectLatest
@@ -46,6 +49,7 @@ class LibraryScreen : Screen {
         val viewModel: LibraryViewModel = koinViewModel()
         val state by viewModel.uiState.collectAsState()
         val snackbarHostState = remember { SnackbarHostState() }
+        val navigator = LocalNavigator.current
 
         // Handle side effects
         LaunchedEffect(Unit) {
@@ -82,6 +86,14 @@ class LibraryScreen : Screen {
                             style = MaterialTheme.typography.headlineMedium,
                             color = AuroraColors.TextPrimary
                         )
+                    },
+                    actions = {
+                        IconButton(onClick = { navigator?.push(SettingsScreen()) }) {
+                            Text(
+                                text = "⚙️",
+                                style = MaterialTheme.typography.headlineSmall
+                            )
+                        }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = AuroraColors.DeepIndigo,

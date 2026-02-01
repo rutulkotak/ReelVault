@@ -77,6 +77,10 @@ kotlin {
 
             // Kamel - Image loading
             implementation(libs.kamel.image)
+
+            // Multiplatform Settings
+            implementation(libs.multiplatform.settings)
+            implementation(libs.multiplatform.settings.noarg)
         }
         iosMain.dependencies {
             // SQLDelight
