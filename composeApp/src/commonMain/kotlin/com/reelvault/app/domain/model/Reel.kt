@@ -11,5 +11,7 @@ data class Reel(
     val title: String,
     val thumbnail: String,
     val tags: List<String>,
-    val createdAt: Instant
+    val createdAt: Instant,
+    val collectionId: Long? = null,
+    val notes: String? = null
 )

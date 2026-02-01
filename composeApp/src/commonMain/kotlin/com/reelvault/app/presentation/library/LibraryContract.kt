@@ -21,7 +21,8 @@ object LibraryContract {
         val searchQuery: String = "",
         val selectedTags: Set<String> = emptySet(),
         val selectedPlatform: String? = null,  // null = "All"
-        val selectedItemIds: Set<String> = emptySet()  // For multi-selection
+        val selectedItemIds: Set<String> = emptySet(),  // For multi-selection
+        val selectedCollectionId: Long? = null  // null = show all, -1 = uncategorized
     ) : MviContract.UiState {
 
         /**
@@ -68,6 +69,20 @@ object LibraryContract {
          * Triggers metadata scraping and persistence.
          */
         data class SaveReel(val url: String) : Intent
+
+        /**
+         * Curation Intents
+         */
+        data class FilterByCollection(val collectionId: Long?) : Intent  // null = all, -1 = uncategorized
+        data class UpdateReelDetails(
+            val id: String,
+            val title: String,
+            val notes: String?,
+            val tags: List<String>,
+            val collectionId: Long?
+        ) : Intent
+        data class MoveToCollection(val reelIds: List<String>, val collectionId: Long?) : Intent
+        data class NavigateToDetail(val reel: Reel) : Intent
     }
 
     /**
@@ -87,5 +102,11 @@ object LibraryContract {
         data class ReelSaved(val title: String) : Effect
         data class ReelSaveFailed(val message: String) : Effect
         data object ReelAlreadyExists : Effect
+
+        /**
+         * Curation Effects
+         */
+        data class ReelDetailsUpdated(val title: String) : Effect
+        data class ReelsMovedToCollection(val count: Int) : Effect
     }
 }

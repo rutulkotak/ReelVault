@@ -38,4 +38,30 @@ interface LibraryRepository {
      * Check if a reel exists in the library.
      */
     suspend fun isReelSaved(url: String): Boolean
+
+    /**
+     * Update reel details (title, notes, tags, collection).
+     */
+    suspend fun updateReelDetails(
+        id: String,
+        title: String,
+        notes: String?,
+        tags: List<String>,
+        collectionId: Long?
+    )
+
+    /**
+     * Get reels filtered by collection ID.
+     */
+    fun getReelsByCollection(collectionId: Long): Flow<List<Reel>>
+
+    /**
+     * Get reels without a collection.
+     */
+    fun getReelsWithoutCollection(): Flow<List<Reel>>
+
+    /**
+     * Move multiple reels to a collection.
+     */
+    suspend fun moveReelsToCollection(reelIds: List<String>, collectionId: Long?)
 }

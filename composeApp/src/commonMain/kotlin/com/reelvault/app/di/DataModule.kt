@@ -3,8 +3,10 @@ package com.reelvault.app.di
 import com.reelvault.app.data.local.DatabaseDriverFactory
 import com.reelvault.app.data.remote.KtorMetadataScraper
 import com.reelvault.app.data.remote.MetadataScraper
+import com.reelvault.app.data.repository.CollectionRepositoryImpl
 import com.reelvault.app.data.repository.LibraryRepositoryImpl
 import com.reelvault.app.database.ReelVaultDatabase
+import com.reelvault.app.domain.repository.CollectionRepository
 import com.reelvault.app.domain.repository.LibraryRepository
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngine
@@ -32,8 +34,9 @@ val dataModule = module {
     // Metadata Scraper
     singleOf(::KtorMetadataScraper) bind MetadataScraper::class
 
-    // Repository
+    // Repositories
     singleOf(::LibraryRepositoryImpl) bind LibraryRepository::class
+    singleOf(::CollectionRepositoryImpl) bind CollectionRepository::class
 }
 
 /**

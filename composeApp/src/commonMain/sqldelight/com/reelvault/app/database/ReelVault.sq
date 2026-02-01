@@ -1,20 +1,73 @@
 -- ReelVault Database Schema
 -- Stores saved reels in the user's library
 
+CREATE TABLE IF NOT EXISTS Collection (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    color TEXT NOT NULL,
+    icon TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS Reel (
     id TEXT NOT NULL PRIMARY KEY,
     url TEXT NOT NULL UNIQUE,
     title TEXT NOT NULL,
     thumbnailUrl TEXT NOT NULL,
     tags TEXT NOT NULL,  -- Stored as comma-separated string
-    createdAt INTEGER NOT NULL  -- Unix timestamp in milliseconds
+    createdAt INTEGER NOT NULL,  -- Unix timestamp in milliseconds
+    collectionId INTEGER,  -- Foreign key to Collection
+    notes TEXT,
+    FOREIGN KEY (collectionId) REFERENCES Collection(id) ON DELETE SET NULL
 );
 
 -- Queries
 
+-- Collection Queries
+
+getAllCollections:
+SELECT Collection.*, COUNT(Reel.id) AS reelCount
+FROM Collection
+LEFT JOIN Reel ON Reel.collectionId = Collection.id
+GROUP BY Collection.id
+ORDER BY Collection.name;
+
+getCollectionById:
+SELECT * FROM Collection
+WHERE id = ?;
+
+insertCollection:
+INSERT INTO Collection(name, color, icon)
+VALUES (?, ?, ?);
+
+updateCollection:
+UPDATE Collection
+SET name = ?, color = ?, icon = ?
+WHERE id = ?;
+
+deleteCollection:
+DELETE FROM Collection
+WHERE id = ?;
+
+lastInsertRowId:
+SELECT last_insert_rowid();
+
+-- Reel Queries
+
 -- Get all saved reels ordered by creation date (newest first)
 getAllReels:
 SELECT * FROM Reel
+ORDER BY createdAt DESC;
+
+-- Get reels by collection
+getReelsByCollection:
+SELECT * FROM Reel
+WHERE collectionId = ?
+ORDER BY createdAt DESC;
+
+-- Get reels without a collection
+getReelsWithoutCollection:
+SELECT * FROM Reel
+WHERE collectionId IS NULL
 ORDER BY createdAt DESC;
 
 -- Search reels by title or tags
@@ -36,8 +89,20 @@ WHERE url = ?;
 
 -- Insert a new reel
 insertReel:
-INSERT OR REPLACE INTO Reel(id, url, title, thumbnailUrl, tags, createdAt)
-VALUES (?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO Reel(id, url, title, thumbnailUrl, tags, createdAt, collectionId, notes)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+-- Update reel details
+updateReelDetails:
+UPDATE Reel
+SET title = ?, notes = ?, tags = ?, collectionId = ?
+WHERE id = ?;
+
+-- Move reels to collection
+moveReelsToCollection:
+UPDATE Reel
+SET collectionId = ?
+WHERE id IN ?;
 
 -- Delete a reel by ID
 deleteReelById:

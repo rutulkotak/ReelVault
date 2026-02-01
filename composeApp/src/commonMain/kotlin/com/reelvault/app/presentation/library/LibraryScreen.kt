@@ -91,6 +91,12 @@ class LibraryScreen : Screen {
                     is LibraryContract.Effect.ReelAlreadyExists -> {
                         snackbarHostState.showSnackbar("📌 Reel already saved")
                     }
+                    is LibraryContract.Effect.ReelDetailsUpdated -> {
+                        snackbarHostState.showSnackbar("✅ Updated: ${effect.title}")
+                    }
+                    is LibraryContract.Effect.ReelsMovedToCollection -> {
+                        snackbarHostState.showSnackbar("✅ ${effect.count} reel(s) moved")
+                    }
                 }
             }
         }

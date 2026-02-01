@@ -4,7 +4,9 @@ import androidx.lifecycle.viewModelScope
 import com.reelvault.app.domain.model.Reel
 import com.reelvault.app.domain.usecase.DeleteReelsUseCase
 import com.reelvault.app.domain.usecase.GetSavedReelsUseCase
+import com.reelvault.app.domain.usecase.MoveReelsToCollectionUseCase
 import com.reelvault.app.domain.usecase.SaveReelFromUrlUseCase
+import com.reelvault.app.domain.usecase.UpdateReelDetailsUseCase
 import com.reelvault.app.presentation.base.BaseViewModel
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
@@ -19,7 +21,9 @@ import kotlinx.coroutines.launch
 class LibraryViewModel(
     private val getSavedReelsUseCase: GetSavedReelsUseCase,
     private val saveReelFromUrlUseCase: SaveReelFromUrlUseCase,
-    private val deleteReelsUseCase: DeleteReelsUseCase
+    private val deleteReelsUseCase: DeleteReelsUseCase,
+    private val updateReelDetailsUseCase: UpdateReelDetailsUseCase,
+    private val moveReelsToCollectionUseCase: MoveReelsToCollectionUseCase
 ) : BaseViewModel<LibraryContract.State, LibraryContract.Intent, LibraryContract.Effect>(
     initialState = LibraryContract.State()
 ) {
@@ -43,6 +47,12 @@ class LibraryViewModel(
             is LibraryContract.Intent.DeleteReel -> onDeleteReel(intent.reelId)
             is LibraryContract.Intent.ReelClicked -> onReelClicked(intent.reel)
             is LibraryContract.Intent.SaveReel -> onSaveReel(intent.url)
+            is LibraryContract.Intent.FilterByCollection -> onFilterByCollection(intent.collectionId)
+            is LibraryContract.Intent.UpdateReelDetails -> onUpdateReelDetails(
+                intent.id, intent.title, intent.notes, intent.tags, intent.collectionId
+            )
+            is LibraryContract.Intent.MoveToCollection -> onMoveToCollection(intent.reelIds, intent.collectionId)
+            is LibraryContract.Intent.NavigateToDetail -> onNavigateToDetail(intent.reel)
         }
     }
 
@@ -149,5 +159,46 @@ class LibraryViewModel(
                 }
             }
         }
+    }
+
+    private fun onFilterByCollection(collectionId: Long?) {
+        updateState { copy(selectedCollectionId = collectionId) }
+    }
+
+    private fun onUpdateReelDetails(
+        id: String,
+        title: String,
+        notes: String?,
+        tags: List<String>,
+        collectionId: Long?
+    ) {
+        viewModelScope.launch {
+            val result = updateReelDetailsUseCase(id, title, notes, tags, collectionId)
+            if (result.isSuccess) {
+                emitEffect(LibraryContract.Effect.ReelDetailsUpdated(title))
+            } else {
+                emitEffect(LibraryContract.Effect.ShowError(
+                    "Failed to update reel: ${result.exceptionOrNull()?.message}"
+                ))
+            }
+        }
+    }
+
+    private fun onMoveToCollection(reelIds: List<String>, collectionId: Long?) {
+        viewModelScope.launch {
+            val result = moveReelsToCollectionUseCase(reelIds, collectionId)
+            if (result.isSuccess) {
+                updateState { copy(selectedItemIds = emptySet()) }
+                emitEffect(LibraryContract.Effect.ReelsMovedToCollection(reelIds.size))
+            } else {
+                emitEffect(LibraryContract.Effect.ShowError(
+                    "Failed to move reels: ${result.exceptionOrNull()?.message}"
+                ))
+            }
+        }
+    }
+
+    private fun onNavigateToDetail(reel: Reel) {
+        emitEffect(LibraryContract.Effect.NavigateToReelDetail(reel))
     }
 }

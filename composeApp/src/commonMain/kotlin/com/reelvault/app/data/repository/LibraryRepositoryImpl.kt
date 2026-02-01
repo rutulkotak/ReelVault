@@ -44,7 +44,9 @@ class LibraryRepositoryImpl(
             title = reel.title,
             thumbnailUrl = reel.thumbnail,
             tags = reel.tags.joinToString(","),
-            createdAt = reel.createdAt.toEpochMilliseconds()
+            createdAt = reel.createdAt.toEpochMilliseconds(),
+            collectionId = reel.collectionId,
+            notes = reel.notes
         )
     }
 
@@ -60,6 +62,55 @@ class LibraryRepositoryImpl(
 
     override suspend fun isReelSaved(url: String): Boolean = withContext(Dispatchers.IO) {
         queries.isReelSaved(url).executeAsOne()
+    }
+
+    override suspend fun updateReelDetails(
+        id: String,
+        title: String,
+        notes: String?,
+        tags: List<String>,
+        collectionId: Long?
+    ) = withContext(Dispatchers.IO) {
+        queries.updateReelDetails(
+            title = title,
+            notes = notes,
+            tags = tags.joinToString(","),
+            collectionId = collectionId,
+            id = id
+        )
+    }
+
+    override fun getReelsByCollection(collectionId: Long): Flow<List<Reel>> {
+        return queries.getReelsByCollection(collectionId)
+            .asFlow()
+            .mapToList(Dispatchers.IO)
+            .map { dbReels ->
+                dbReels.map { it.toDomainModel() }
+            }
+    }
+
+    override fun getReelsWithoutCollection(): Flow<List<Reel>> {
+        return queries.getReelsWithoutCollection()
+            .asFlow()
+            .mapToList(Dispatchers.IO)
+            .map { dbReels ->
+                dbReels.map { it.toDomainModel() }
+            }
+    }
+
+    override suspend fun moveReelsToCollection(reelIds: List<String>, collectionId: Long?) = withContext(Dispatchers.IO) {
+        queries.transaction {
+            reelIds.forEach { id ->
+                val reel = queries.getReelById(id).executeAsOne()
+                queries.updateReelDetails(
+                    id = id,
+                    title = reel.title,
+                    notes = reel.notes,
+                    tags = reel.tags,
+                    collectionId = collectionId
+                )
+            }
+        }
     }
 
     /**
@@ -81,6 +132,8 @@ private fun com.reelvault.app.database.Reel.toDomainModel(): Reel {
         title = title,
         thumbnail = thumbnailUrl,
         tags = if (tags.isBlank()) emptyList() else tags.split(",").map { it.trim() },
-        createdAt = Instant.fromEpochMilliseconds(createdAt)
+        createdAt = Instant.fromEpochMilliseconds(createdAt),
+        collectionId = collectionId,
+        notes = notes
     )
 }
