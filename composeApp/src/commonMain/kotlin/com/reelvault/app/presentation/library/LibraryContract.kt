@@ -14,6 +14,8 @@ object LibraryContract {
      */
     data class State(
         val isLoading: Boolean = true,
+        val isCapturing: Boolean = false,
+        val capturingUrl: String? = null,
         val reels: List<Reel> = emptyList(),
         val errorMessage: String? = null,
         val searchQuery: String = "",
@@ -52,6 +54,12 @@ object LibraryContract {
         data object ClearFilters : Intent
         data class DeleteReel(val reelId: String) : Intent
         data class ReelClicked(val reel: Reel) : Intent
+
+        /**
+         * Intent for saving a reel from a shared URL.
+         * Triggers metadata scraping and persistence.
+         */
+        data class SaveReel(val url: String) : Intent
     }
 
     /**
@@ -63,5 +71,12 @@ object LibraryContract {
         data class ShowDeleteConfirmation(val reelId: String) : Effect
         data object ReelDeleted : Effect
         data class OpenUrl(val url: String) : Effect
+
+        /**
+         * Effects for Share Sheet capture flow.
+         */
+        data class ReelSaved(val title: String) : Effect
+        data class ReelSaveFailed(val message: String) : Effect
+        data object ReelAlreadyExists : Effect
     }
 }

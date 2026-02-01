@@ -2,6 +2,7 @@ package com.reelvault.app.di
 
 import com.reelvault.app.data.local.DatabaseDriverFactory
 import com.reelvault.app.data.notification.NotificationManager
+import com.reelvault.app.data.storage.SharedDataStorage
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.darwin.Darwin
 import org.koin.dsl.module
@@ -18,4 +19,7 @@ actual val platformModule = module {
 
     // Notification Manager (iOS)
     single { NotificationManager() }
+
+    // Shared Data Storage for Share Extension support (NSUserDefaults with App Group)
+    single { SharedDataStorage() }
 }

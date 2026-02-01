@@ -4,9 +4,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
@@ -25,7 +30,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -69,6 +76,15 @@ class LibraryScreen : Screen {
                     }
                     is LibraryContract.Effect.ReelDeleted -> {
                         snackbarHostState.showSnackbar("Reel deleted")
+                    }
+                    is LibraryContract.Effect.ReelSaved -> {
+                        snackbarHostState.showSnackbar("✅ Saved: ${effect.title}")
+                    }
+                    is LibraryContract.Effect.ReelSaveFailed -> {
+                        snackbarHostState.showSnackbar("❌ Failed: ${effect.message}")
+                    }
+                    is LibraryContract.Effect.ReelAlreadyExists -> {
+                        snackbarHostState.showSnackbar("📌 Reel already saved")
                     }
                 }
             }
@@ -149,6 +165,11 @@ private fun LibraryContent(
                 )
             }
         }
+
+        // Overlay for capturing state
+        if (state.isCapturing) {
+            CapturingOverlay(url = state.capturingUrl)
+        }
     }
 }
 
@@ -212,6 +233,66 @@ private fun ErrorState(
                 text = "Try Again",
                 color = AuroraColors.BrightIndigo
             )
+        }
+    }
+}
+
+/**
+ * Overlay shown when capturing/saving a shared reel.
+ * Displays "Capturing..." with a progress indicator.
+ */
+@Composable
+private fun CapturingOverlay(
+    url: String?,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.6f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            modifier = Modifier.padding(32.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = AuroraColors.DeepIndigo
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(48.dp),
+                    color = AuroraColors.SoftViolet,
+                    trackColor = AuroraColors.LightCharcoal
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Capturing...",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = AuroraColors.TextPrimary
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Fetching metadata",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = AuroraColors.TextSecondary
+                )
+                if (url != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = url,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = AuroraColors.TextTertiary,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
         }
     }
 }

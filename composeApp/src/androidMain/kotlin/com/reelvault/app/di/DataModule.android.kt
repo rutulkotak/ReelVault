@@ -2,6 +2,7 @@ package com.reelvault.app.di
 
 import com.reelvault.app.data.local.DatabaseDriverFactory
 import com.reelvault.app.data.notification.NotificationManager
+import com.reelvault.app.data.storage.SharedDataStorage
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.okhttp.OkHttp
 import org.koin.android.ext.koin.androidContext
@@ -19,4 +20,7 @@ actual val platformModule = module {
 
     // Notification Manager (requires Android Context)
     single { NotificationManager(androidContext()) }
+
+    // Shared Data Storage for Share Sheet support (EncryptedSharedPreferences)
+    single { SharedDataStorage(androidContext()) }
 }
