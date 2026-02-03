@@ -55,8 +55,10 @@ import org.koin.compose.viewmodel.koinViewModel
 /**
  * Voyager Screen for the Library feature.
  * Displays the user's saved reels collection with Aurora UI.
+ * 
+ * @param initialCollectionId Optional ID to filter by on startup.
  */
-class LibraryScreen : Screen {
+data class LibraryScreen(val initialCollectionId: Long? = null) : Screen {
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
@@ -65,6 +67,13 @@ class LibraryScreen : Screen {
         val state by viewModel.uiState.collectAsState()
         val snackbarHostState = remember { SnackbarHostState() }
         val navigator = LocalNavigator.currentOrThrow
+
+        // Handle initial filter
+        LaunchedEffect(initialCollectionId) {
+            if (initialCollectionId != null) {
+                viewModel.onIntent(LibraryContract.Intent.FilterByCollection(initialCollectionId))
+            }
+        }
 
         // Handle side effects
         LaunchedEffect(Unit) {
@@ -81,7 +90,7 @@ class LibraryScreen : Screen {
                         navigator.push(
                             ReelDetailScreen(
                                 reel = effect.reel,
-                                collections = emptyList(), // TODO: Get collections from ViewModel
+                                collections = state.collections, // Fix: Pass collections from ViewModel state
                                 onSave = { title, notes, tags, collectionId ->
                                     viewModel.onIntent(
                                         LibraryContract.Intent.UpdateReelDetails(
@@ -118,6 +127,9 @@ class LibraryScreen : Screen {
                     is LibraryContract.Effect.ReelDetailsUpdated -> {
                         snackbarHostState.showSnackbar("✅ Updated: ${effect.title}")
                     }
+                    is LibraryContract.Effect.ReelCollectionUpdated -> {
+                        snackbarHostState.showSnackbar("✅ Collection updated")
+                    }
                     is LibraryContract.Effect.ReelsMovedToCollection -> {
                         snackbarHostState.showSnackbar("✅ ${effect.count} reel(s) moved")
                     }
@@ -132,11 +144,25 @@ class LibraryScreen : Screen {
             topBar = {
                 TopAppBar(
                     title = {
+                        val title = if (state.selectedCollectionId != null) {
+                            state.collections.find { it.id == state.selectedCollectionId }?.name ?: "Collection"
+                        } else {
+                            "ReelVault"
+                        }
                         Text(
-                            "ReelVault",
+                            title,
                             style = MaterialTheme.typography.headlineMedium,
                             color = AuroraColors.TextPrimary
                         )
+                    },
+                    navigationIcon = {
+                        if (state.selectedCollectionId != null) {
+                            IconButton(onClick = { 
+                                viewModel.onIntent(LibraryContract.Intent.FilterByCollection(null)) 
+                            }) {
+                                Text("🔙", style = MaterialTheme.typography.headlineSmall)
+                            }
+                        }
                     },
                     actions = {
                         // Collections button

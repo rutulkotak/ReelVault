@@ -3,12 +3,14 @@ package com.reelvault.app.presentation.library
 import androidx.lifecycle.viewModelScope
 import com.reelvault.app.domain.model.Reel
 import com.reelvault.app.domain.usecase.DeleteReelsUseCase
+import com.reelvault.app.domain.usecase.GetCollectionsUseCase
 import com.reelvault.app.domain.usecase.GetSavedReelsUseCase
 import com.reelvault.app.domain.usecase.MoveReelsToCollectionUseCase
 import com.reelvault.app.domain.usecase.SaveReelFromUrlUseCase
 import com.reelvault.app.domain.usecase.UpdateReelDetailsUseCase
 import com.reelvault.app.presentation.base.BaseViewModel
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
@@ -20,6 +22,7 @@ import kotlinx.coroutines.launch
  */
 class LibraryViewModel(
     private val getSavedReelsUseCase: GetSavedReelsUseCase,
+    private val getCollectionsUseCase: GetCollectionsUseCase,
     private val saveReelFromUrlUseCase: SaveReelFromUrlUseCase,
     private val deleteReelsUseCase: DeleteReelsUseCase,
     private val updateReelDetailsUseCase: UpdateReelDetailsUseCase,
@@ -29,20 +32,20 @@ class LibraryViewModel(
 ) {
 
     init {
-        loadReels()
+        loadData()
     }
 
     override fun onIntent(intent: LibraryContract.Intent) {
         when (intent) {
-            is LibraryContract.Intent.LoadReels -> loadReels()
-            is LibraryContract.Intent.Refresh -> loadReels()
+            is LibraryContract.Intent.LoadReels -> loadData()
+            is LibraryContract.Intent.Refresh -> loadData()
             is LibraryContract.Intent.SearchQueryChanged -> onSearchQueryChanged(intent.query)
             is LibraryContract.Intent.UpdateSearchQuery -> onSearchQueryChanged(intent.query)
             is LibraryContract.Intent.TagSelected -> onTagSelected(intent.tag)
             is LibraryContract.Intent.TagDeselected -> onTagDeselected(intent.tag)
             is LibraryContract.Intent.ClearFilters -> onClearFilters()
             is LibraryContract.Intent.FilterByPlatform -> onFilterByPlatform(intent.platform)
-            is LibraryContract.Intent.ToggleSelection -> onToggleSelection(intent.id)
+            is LibraryContract.Intent.ToggleSelection -> onToggleSelection(id = intent.id)
             is LibraryContract.Intent.DeleteSelectedItems -> onDeleteSelectedItems()
             is LibraryContract.Intent.DeleteReel -> onDeleteReel(intent.reelId)
             is LibraryContract.Intent.ReelClicked -> onReelClicked(intent.reel)
@@ -51,31 +54,37 @@ class LibraryViewModel(
             is LibraryContract.Intent.UpdateReelDetails -> onUpdateReelDetails(
                 intent.id, intent.title, intent.notes, intent.tags, intent.collectionId
             )
+            is LibraryContract.Intent.UpdateReelCollection -> onUpdateReelCollection(intent.reelId, intent.collectionId)
             is LibraryContract.Intent.MoveToCollection -> onMoveToCollection(intent.reelIds, intent.collectionId)
             is LibraryContract.Intent.NavigateToDetail -> onNavigateToDetail(intent.reel)
         }
     }
 
-    private fun loadReels() {
-        getSavedReelsUseCase()
-            .onStart {
-                updateState { copy(isLoading = true, errorMessage = null) }
+    private fun loadData() {
+        combine(
+            getSavedReelsUseCase(),
+            getCollectionsUseCase()
+        ) { reels, collections ->
+            reels to collections
+        }
+        .onStart {
+            updateState { copy(isLoading = true, errorMessage = null) }
+        }
+        .onEach { (reels, collections) ->
+            updateState { copy(isLoading = false, reels = reels, collections = collections) }
+        }
+        .catch { throwable ->
+            updateState {
+                copy(
+                    isLoading = false,
+                    errorMessage = throwable.message ?: "Failed to load library data"
+                )
             }
-            .onEach { reels ->
-                updateState { copy(isLoading = false, reels = reels) }
-            }
-            .catch { throwable ->
-                updateState {
-                    copy(
-                        isLoading = false,
-                        errorMessage = throwable.message ?: "Failed to load reels"
-                    )
-                }
-                emitEffect(LibraryContract.Effect.ShowError(
-                    throwable.message ?: "Failed to load reels"
-                ))
-            }
-            .launchIn(viewModelScope)
+            emitEffect(LibraryContract.Effect.ShowError(
+                throwable.message ?: "Failed to load library data"
+            ))
+        }
+        .launchIn(viewModelScope)
     }
 
     private fun onSearchQueryChanged(query: String) {
@@ -193,6 +202,23 @@ class LibraryViewModel(
             } else {
                 emitEffect(LibraryContract.Effect.ShowError(
                     "Failed to move reels: ${result.exceptionOrNull()?.message}"
+                ))
+            }
+        }
+    }
+
+    /**
+     * Handle updating a single reel's collection assignment.
+     * This is used when the user changes collection from the detail screen.
+     */
+    private fun onUpdateReelCollection(reelId: String, collectionId: Long?) {
+        viewModelScope.launch {
+            val result = moveReelsToCollectionUseCase(listOf(reelId), collectionId)
+            if (result.isSuccess) {
+                emitEffect(LibraryContract.Effect.ReelCollectionUpdated(reelId))
+            } else {
+                emitEffect(LibraryContract.Effect.ShowError(
+                    "Failed to update collection: ${result.exceptionOrNull()?.message}"
                 ))
             }
         }

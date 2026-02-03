@@ -5,20 +5,28 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -26,6 +34,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,7 +62,7 @@ import io.kamel.image.asyncPainterResource
  * @param isSelectionMode Whether the library is in selection mode
  * @param modifier Optional modifier
  */
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun ReelCard(
     reel: Reel,
@@ -63,6 +73,9 @@ fun ReelCard(
     onLongClick: (() -> Unit)? = null,
     isSelectionMode: Boolean = false
 ) {
+    // Hover state for play icon overlay
+    val interactionSource = remember { MutableInteractionSource() }
+    val isHovered by interactionSource.collectIsHoveredAsState()
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -89,6 +102,7 @@ fun ReelCard(
                     .fillMaxWidth()
                     .aspectRatio(9f / 16f) // Instagram reel aspect ratio
                     .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                    .hoverable(interactionSource = interactionSource)
                     .then(
                         if (onLongClick != null) {
                             Modifier.combinedClickable(
@@ -112,13 +126,13 @@ fun ReelCard(
                         }
                     )
             ) {
-                // Image
+                // Image with Kamel loading/error handling
                 KamelImage(
                     resource = asyncPainterResource(data = reel.thumbnail),
                     contentDescription = reel.title,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize(),
-                    onLoading = { progress ->
+                    onLoading = { progress: Float ->
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -126,13 +140,13 @@ fun ReelCard(
                             contentAlignment = Alignment.Center
                         ) {
                             CircularProgressIndicator(
-                                progress = { progress },
                                 modifier = Modifier.size(40.dp),
                                 color = AuroraColors.SoftViolet
                             )
                         }
                     },
-                    onFailure = { exception ->
+                    onFailure = { exception: Throwable ->
+                        // Fallback to platform icon
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -140,9 +154,8 @@ fun ReelCard(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "🎬",
-                                style = MaterialTheme.typography.displayMedium,
-                                color = AuroraColors.TextTertiary
+                                text = getPlatformIcon(reel.url),
+                                style = MaterialTheme.typography.displayLarge
                             )
                         }
                     }
@@ -162,6 +175,31 @@ fun ReelCard(
                             )
                         )
                 )
+
+                // Play Icon Overlay (visible on hover or with 0.5 opacity always)
+                if (!isSelected) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PlayArrow,
+                            contentDescription = "Play",
+                            tint = AuroraColors.TextPrimary.copy(
+                                alpha = if (isHovered) 0.9f else 0.5f
+                            ),
+                            modifier = Modifier
+                                .size(56.dp)
+                                .background(
+                                    color = AuroraColors.MidnightIndigo.copy(
+                                        alpha = if (isHovered) 0.7f else 0.4f
+                                    ),
+                                    shape = CircleShape
+                                )
+                                .padding(8.dp)
+                        )
+                    }
+                }
 
                 // Selection Overlay
                 if (isSelected) {
@@ -201,14 +239,27 @@ fun ReelCard(
                     .padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Title
-                Text(
-                    text = reel.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = AuroraColors.TextPrimary,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
+                // Title with edit icon
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = reel.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = AuroraColors.TextPrimary,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Icon(
+                        imageVector = Icons.Default.EditNote,
+                        contentDescription = "Edit",
+                        tint = AuroraColors.TextSecondary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
 
                 // Tags
                 if (reel.tags.isNotEmpty()) {
@@ -256,3 +307,22 @@ private fun TagChip(
         )
     }
 }
+
+/**
+ * Get platform-specific icon based on URL.
+ * Returns high-res platform logo emoji for fallback display.
+ */
+private fun getPlatformIcon(url: String): String {
+    return when {
+        url.contains("youtube", ignoreCase = true) ||
+        url.contains("youtu.be", ignoreCase = true) -> "▶️"  // YouTube/Shorts
+        url.contains("instagram", ignoreCase = true) -> "📸"  // Instagram
+        url.contains("tiktok", ignoreCase = true) -> "🎵"  // TikTok
+        url.contains("facebook", ignoreCase = true) ||
+        url.contains("fb.watch", ignoreCase = true) -> "📘"  // Facebook
+        url.contains("twitter", ignoreCase = true) ||
+        url.contains("x.com", ignoreCase = true) -> "🐦"  // Twitter/X
+        else -> "🎬"  // Generic video
+    }
+}
+

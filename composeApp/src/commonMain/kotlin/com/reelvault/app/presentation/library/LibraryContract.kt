@@ -1,5 +1,6 @@
 package com.reelvault.app.presentation.library
 
+import com.reelvault.app.domain.model.Collection
 import com.reelvault.app.domain.model.Reel
 import com.reelvault.app.presentation.base.MviContract
 
@@ -22,11 +23,12 @@ object LibraryContract {
         val selectedTags: Set<String> = emptySet(),
         val selectedPlatform: String? = null,  // null = "All"
         val selectedItemIds: Set<String> = emptySet(),  // For multi-selection
-        val selectedCollectionId: Long? = null  // null = show all, -1 = uncategorized
+        val selectedCollectionId: Long? = null,  // null = show all, -1 = uncategorized
+        val collections: List<Collection> = emptyList()
     ) : MviContract.UiState {
 
         /**
-         * Filtered reels based on search query and selected tags.
+         * Filtered reels based on search query, selected tags, and collection.
          */
         val filteredReels: List<Reel>
             get() = reels.filter { reel ->
@@ -37,7 +39,12 @@ object LibraryContract {
                     reel.tags.any { it in selectedTags }
                 val matchesPlatform = selectedPlatform == null ||
                     reel.url.contains(selectedPlatform, ignoreCase = true)
-                matchesSearch && matchesTags && matchesPlatform
+                val matchesCollection = when (selectedCollectionId) {
+                    null -> true // All
+                    -1L -> reel.collectionId == null // Uncategorized
+                    else -> reel.collectionId == selectedCollectionId
+                }
+                matchesSearch && matchesTags && matchesPlatform && matchesCollection
             }
 
         /**
@@ -81,6 +88,7 @@ object LibraryContract {
             val tags: List<String>,
             val collectionId: Long?
         ) : Intent
+        data class UpdateReelCollection(val reelId: String, val collectionId: Long?) : Intent
         data class MoveToCollection(val reelIds: List<String>, val collectionId: Long?) : Intent
         data class NavigateToDetail(val reel: Reel) : Intent
     }
@@ -107,6 +115,7 @@ object LibraryContract {
          * Curation Effects
          */
         data class ReelDetailsUpdated(val title: String) : Effect
+        data class ReelCollectionUpdated(val reelId: String) : Effect
         data class ReelsMovedToCollection(val count: Int) : Effect
     }
 }

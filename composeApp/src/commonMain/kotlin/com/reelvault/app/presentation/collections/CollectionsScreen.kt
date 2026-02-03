@@ -24,7 +24,9 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.reelvault.app.domain.model.Collection
 import com.reelvault.app.presentation.base.ObserveEffect
+import com.reelvault.app.presentation.library.LibraryScreen
 import com.reelvault.app.presentation.theme.AuroraColors
+import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -40,6 +42,7 @@ class CollectionsScreen : Screen {
         val state by viewModel.uiState.collectAsState()
         val navigator = LocalNavigator.currentOrThrow
         val snackbarHostState = remember { SnackbarHostState() }
+        val scope = rememberCoroutineScope()
 
         var showCreateDialog by remember { mutableStateOf(false) }
 
@@ -47,16 +50,19 @@ class CollectionsScreen : Screen {
         ObserveEffect(viewModel.effect) { effect ->
             when (effect) {
                 is CollectionsContract.Effect.ShowError -> {
-                    snackbarHostState.showSnackbar(effect.message)
+                    scope.launch {
+                        snackbarHostState.showSnackbar(effect.message)
+                    }
                 }
                 is CollectionsContract.Effect.CollectionCreated -> {
-                    snackbarHostState.showSnackbar("Collection '${effect.name}' created")
+                    scope.launch {
+                        snackbarHostState.showSnackbar("Collection '${effect.name}' created")
+                    }
                 }
                 is CollectionsContract.Effect.NavigateToCollectionDetail -> {
-                    // Pop back to library - library will need to filter by this collection
-                    // Note: In production, you'd use Voyager's result APIs or a shared state
-                    snackbarHostState.showSnackbar("Filter by: ${effect.collection.name}")
-                    navigator.pop()
+                    // Navigate to Library with filter
+                    // We use replaceAll to reset stack and ensure LibraryScreen handles the filter
+                    navigator.replaceAll(LibraryScreen(initialCollectionId = effect.collection.id))
                 }
             }
         }
@@ -68,7 +74,12 @@ class CollectionsScreen : Screen {
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = AuroraColors.DarkCharcoal,
                         titleContentColor = AuroraColors.TextPrimary
-                    )
+                    ),
+                    navigationIcon = {
+                        IconButton(onClick = { navigator.pop() }) {
+                            Text("🔙", style = MaterialTheme.typography.headlineSmall)
+                        }
+                    }
                 )
             },
             floatingActionButton = {

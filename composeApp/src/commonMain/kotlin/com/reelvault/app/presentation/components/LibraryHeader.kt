@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.reelvault.app.presentation.theme.AuroraColors
 
@@ -216,6 +217,8 @@ private fun PlatformChip(
         text = label,
         style = MaterialTheme.typography.labelLarge,
         color = textColor,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
         modifier = modifier
             .clip(RoundedCornerShape(20.dp))
             .background(backgroundColor)
@@ -225,6 +228,6 @@ private fun PlatformChip(
                 shape = RoundedCornerShape(20.dp)
             )
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 12.dp, vertical = 8.dp)
     )
 }

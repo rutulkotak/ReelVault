@@ -1,6 +1,8 @@
 package com.reelvault.app.presentation.detail
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -9,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -51,6 +54,9 @@ data class ReelDetailScreen(
         var tags by remember { mutableStateOf(reel.tags.joinToString(", ")) }
         var selectedCollectionId by remember { mutableStateOf(reel.collectionId) }
         var showCollectionPicker by remember { mutableStateOf(false) }
+
+        // Bottom sheet state
+        val sheetState = rememberModalBottomSheetState()
 
         Scaffold(
             topBar = {
@@ -105,16 +111,16 @@ data class ReelDetailScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Thumbnail
+                // Compact Preview Header (200dp height)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .aspectRatio(9f / 16f)
-                        .clip(RoundedCornerShape(16.dp))
+                        .height(200.dp)
+                        .padding(horizontal = 16.dp)
+                        .clip(RoundedCornerShape(12.dp))
                 ) {
                     KamelImage(
                         resource = asyncPainterResource(data = reel.thumbnail),
@@ -130,125 +136,283 @@ data class ReelDetailScreen(
                             ) {
                                 CircularProgressIndicator(color = AuroraColors.SoftViolet)
                             }
+                        },
+                        onFailure = {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(AuroraColors.MediumCharcoal),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "🎬",
+                                    style = MaterialTheme.typography.displayMedium
+                                )
+                            }
                         }
                     )
                 }
 
-                // Title Field
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    label = { Text("Title") },
-                    enabled = isEditing,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = AuroraColors.SoftViolet,
-                        unfocusedBorderColor = AuroraColors.TextSecondary,
-                        disabledBorderColor = AuroraColors.TextSecondary,
-                        focusedLabelColor = AuroraColors.SoftViolet,
-                        unfocusedLabelColor = AuroraColors.TextSecondary,
-                        disabledTextColor = AuroraColors.TextPrimary,
-                        focusedTextColor = AuroraColors.TextPrimary,
-                        unfocusedTextColor = AuroraColors.TextPrimary
-                    )
-                )
-
-                // Notes Field
-                OutlinedTextField(
-                    value = notes,
-                    onValueChange = { notes = it },
-                    label = { Text("Notes") },
-                    enabled = isEditing,
+                // Form Fields - immediately visible
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(120.dp),
-                    maxLines = 5,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = AuroraColors.SoftViolet,
-                        unfocusedBorderColor = AuroraColors.TextSecondary,
-                        disabledBorderColor = AuroraColors.TextSecondary,
-                        focusedLabelColor = AuroraColors.SoftViolet,
-                        unfocusedLabelColor = AuroraColors.TextSecondary,
-                        disabledTextColor = AuroraColors.TextPrimary,
-                        focusedTextColor = AuroraColors.TextPrimary,
-                        unfocusedTextColor = AuroraColors.TextPrimary
-                    )
-                )
-
-                // Tags Field
-                OutlinedTextField(
-                    value = tags,
-                    onValueChange = { tags = it },
-                    label = { Text("Tags (comma-separated)") },
-                    enabled = isEditing,
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("fitness, motivation, workout") },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = AuroraColors.SoftViolet,
-                        unfocusedBorderColor = AuroraColors.TextSecondary,
-                        disabledBorderColor = AuroraColors.TextSecondary,
-                        focusedLabelColor = AuroraColors.SoftViolet,
-                        unfocusedLabelColor = AuroraColors.TextSecondary,
-                        disabledTextColor = AuroraColors.TextPrimary,
-                        focusedTextColor = AuroraColors.TextPrimary,
-                        unfocusedTextColor = AuroraColors.TextPrimary
-                    )
-                )
-
-                // Collection Picker
-                OutlinedButton(
-                    onClick = { if (isEditing) showCollectionPicker = true },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = isEditing,
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = AuroraColors.TextPrimary
-                    )
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text(
-                        text = collections.find { it.id == selectedCollectionId }?.name
-                            ?: "No Collection",
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                    // Title Field
+                    OutlinedTextField(
+                        value = title,
+                        onValueChange = { title = it },
+                        label = { Text("Title") },
+                        enabled = isEditing,
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = AuroraColors.SoftViolet,
+                            unfocusedBorderColor = AuroraColors.TextSecondary,
+                            disabledBorderColor = AuroraColors.TextSecondary,
+                            focusedLabelColor = AuroraColors.SoftViolet,
+                            unfocusedLabelColor = AuroraColors.TextSecondary,
+                            disabledTextColor = AuroraColors.TextPrimary,
+                            focusedTextColor = AuroraColors.TextPrimary,
+                            unfocusedTextColor = AuroraColors.TextPrimary
+                        )
                     )
+
+                    // Collection Picker - Clickable OutlinedBox
+                    CollectionPickerBox(
+                        selectedCollection = collections.find { it.id == selectedCollectionId },
+                        enabled = isEditing,
+                        onClick = { if (isEditing) showCollectionPicker = true }
+                    )
+
+                    // Notes Field
+                    OutlinedTextField(
+                        value = notes,
+                        onValueChange = { notes = it },
+                        label = { Text("Notes") },
+                        enabled = isEditing,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(100.dp),
+                        maxLines = 4,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = AuroraColors.SoftViolet,
+                            unfocusedBorderColor = AuroraColors.TextSecondary,
+                            disabledBorderColor = AuroraColors.TextSecondary,
+                            focusedLabelColor = AuroraColors.SoftViolet,
+                            unfocusedLabelColor = AuroraColors.TextSecondary,
+                            disabledTextColor = AuroraColors.TextPrimary,
+                            focusedTextColor = AuroraColors.TextPrimary,
+                            unfocusedTextColor = AuroraColors.TextPrimary
+                        )
+                    )
+
+                    // Tags Field
+                    OutlinedTextField(
+                        value = tags,
+                        onValueChange = { tags = it },
+                        label = { Text("Tags (comma-separated)") },
+                        enabled = isEditing,
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        placeholder = { Text("fitness, motivation, workout") },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = AuroraColors.SoftViolet,
+                            unfocusedBorderColor = AuroraColors.TextSecondary,
+                            disabledBorderColor = AuroraColors.TextSecondary,
+                            focusedLabelColor = AuroraColors.SoftViolet,
+                            unfocusedLabelColor = AuroraColors.TextSecondary,
+                            disabledTextColor = AuroraColors.TextPrimary,
+                            focusedTextColor = AuroraColors.TextPrimary,
+                            unfocusedTextColor = AuroraColors.TextPrimary
+                        )
+                    )
+
+                    // Bottom spacing
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
         }
 
-        // Collection Picker Dialog
+        // Collection Picker Modal Bottom Sheet
         if (showCollectionPicker) {
-            AlertDialog(
+            ModalBottomSheet(
                 onDismissRequest = { showCollectionPicker = false },
-                title = { Text("Select Collection") },
-                text = {
-                    Column {
-                        // None option
-                        TextButton(
-                            onClick = {
-                                selectedCollectionId = null
-                                showCollectionPicker = false
-                            }
-                        ) {
-                            Text("None")
-                        }
+                sheetState = sheetState,
+                containerColor = AuroraColors.DeepIndigo,
+                contentColor = AuroraColors.TextPrimary
+            ) {
+                CollectionPickerContent(
+                    collections = collections,
+                    selectedCollectionId = selectedCollectionId,
+                    onCollectionSelected = { collectionId ->
+                        selectedCollectionId = collectionId
+                        showCollectionPicker = false
+                    },
+                    onDismiss = { showCollectionPicker = false }
+                )
+            }
+        }
+    }
+}
 
-                        // Collections
-                        collections.forEach { collection ->
-                            TextButton(
-                                onClick = {
-                                    selectedCollectionId = collection.id
-                                    showCollectionPicker = false
-                                }
-                            ) {
-                                Text(collection.name)
-                            }
-                        }
-                    }
-                },
-                confirmButton = {
-                    TextButton(onClick = { showCollectionPicker = false }) {
-                        Text("Cancel")
-                    }
-                }
+/**
+ * Collection Picker Box - Clickable OutlinedBox that shows current collection.
+ */
+@Composable
+private fun CollectionPickerBox(
+    selectedCollection: Collection?,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(4.dp))
+            .border(
+                width = 1.dp,
+                color = if (enabled) AuroraColors.TextSecondary else AuroraColors.TextSecondary.copy(alpha = 0.5f),
+                shape = RoundedCornerShape(4.dp)
+            )
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Collection",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = AuroraColors.TextSecondary
+                )
+                Text(
+                    text = selectedCollection?.name ?: "No Collection",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = if (selectedCollection != null) AuroraColors.TextPrimary else AuroraColors.TextTertiary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            if (enabled) {
+                Icon(
+                    imageVector = Icons.Default.KeyboardArrowDown,
+                    contentDescription = "Select collection",
+                    tint = AuroraColors.TextSecondary
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Collection Picker Bottom Sheet Content.
+ */
+@Composable
+private fun CollectionPickerContent(
+    collections: List<Collection>,
+    selectedCollectionId: Long?,
+    onCollectionSelected: (Long?) -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(bottom = 32.dp)
+    ) {
+        // Header
+        Text(
+            text = "Select Collection",
+            style = MaterialTheme.typography.titleLarge,
+            color = AuroraColors.TextPrimary,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        )
+
+        HorizontalDivider(color = AuroraColors.LightCharcoal)
+
+        // None option
+        CollectionPickerItem(
+            name = "No Collection",
+            icon = "📂",
+            isSelected = selectedCollectionId == null,
+            onClick = { onCollectionSelected(null) }
+        )
+
+        // Collections list
+        collections.forEach { collection ->
+            CollectionPickerItem(
+                name = collection.name,
+                icon = collection.icon,
+                isSelected = collection.id == selectedCollectionId,
+                onClick = { onCollectionSelected(collection.id) }
+            )
+        }
+
+        // Empty state
+        if (collections.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(32.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "No collections yet.\nCreate one from the Collections screen.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = AuroraColors.TextSecondary,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Individual collection item in the picker.
+ */
+@Composable
+private fun CollectionPickerItem(
+    name: String,
+    icon: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .background(
+                if (isSelected) AuroraColors.SoftViolet.copy(alpha = 0.2f)
+                else androidx.compose.ui.graphics.Color.Transparent
+            )
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(
+            text = icon,
+            style = MaterialTheme.typography.titleMedium
+        )
+        Text(
+            text = name,
+            style = MaterialTheme.typography.bodyLarge,
+            color = AuroraColors.TextPrimary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
+        )
+        if (isSelected) {
+            Icon(
+                imageVector = Icons.Default.Check,
+                contentDescription = "Selected",
+                tint = AuroraColors.SoftViolet
             )
         }
     }

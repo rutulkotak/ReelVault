@@ -4,7 +4,6 @@ import com.russhwolf.settings.Settings
 import com.russhwolf.settings.get
 import com.russhwolf.settings.set
 import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 
 /**
  * App-wide settings manager using multiplatform-settings.
@@ -59,7 +58,7 @@ class AppSettings(private val settings: Settings) {
      * Update the last app open time to now.
      */
     fun updateLastAppOpenTime() {
-        lastAppOpenTime = Clock.System.now().toEpochMilliseconds()
+        lastAppOpenTime = Clock.System.now().epochSeconds * 1000L
     }
 
     /**
@@ -68,9 +67,9 @@ class AppSettings(private val settings: Settings) {
     fun shouldShowDailyNudge(): Boolean {
         if (!isDailyNudgeEnabled) return false
 
-        val lastOpen = Instant.fromEpochMilliseconds(lastAppOpenTime)
-        val now = Clock.System.now()
-        val hoursSinceLastOpen = (now - lastOpen).inWholeHours
+        val nowMillis = Clock.System.now().epochSeconds * 1000L
+        val millisSinceLastOpen = nowMillis - lastAppOpenTime
+        val hoursSinceLastOpen = millisSinceLastOpen / (1000 * 60 * 60)
 
         return hoursSinceLastOpen >= 24
     }
