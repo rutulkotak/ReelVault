@@ -127,7 +127,7 @@ data class ReelDetailScreen(
                         contentDescription = reel.title,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize(),
-                        onLoading = {
+                        onLoading = { _ ->
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
@@ -137,7 +137,7 @@ data class ReelDetailScreen(
                                 CircularProgressIndicator(color = AuroraColors.SoftViolet)
                             }
                         },
-                        onFailure = {
+                        onFailure = { _ ->
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()

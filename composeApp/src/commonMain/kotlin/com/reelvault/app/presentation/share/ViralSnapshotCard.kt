@@ -191,14 +191,14 @@ private fun ThumbnailGrid(
                     .clip(MaterialTheme.shapes.medium)
                     .background(AuroraColors.LightCharcoal),
                 contentScale = ContentScale.Crop,
-                onLoading = {
+                onLoading = { _ ->
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .background(AuroraColors.MediumCharcoal)
                     )
                 },
-                onFailure = {
+                onFailure = { _ ->
                     Box(
                         modifier = Modifier
                             .fillMaxSize()

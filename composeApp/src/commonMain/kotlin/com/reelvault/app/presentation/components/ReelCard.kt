@@ -128,11 +128,11 @@ fun ReelCard(
             ) {
                 // Image with Kamel loading/error handling
                 KamelImage(
-                    resource = asyncPainterResource(data = reel.thumbnail),
+                    resource = { asyncPainterResource(data = reel.thumbnail) },
                     contentDescription = reel.title,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize(),
-                    onLoading = { progress: Float ->
+                    onLoading = { _ ->
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -145,7 +145,8 @@ fun ReelCard(
                             )
                         }
                     },
-                    onFailure = { exception: Throwable ->
+                    onFailure = { error ->
+                        println("RK:Error: $error")
                         // Fallback to platform icon
                         Box(
                             modifier = Modifier
@@ -325,4 +326,3 @@ private fun getPlatformIcon(url: String): String {
         else -> "🎬"  // Generic video
     }
 }
-
