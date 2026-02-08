@@ -4,17 +4,23 @@ import com.reelvault.app.data.remote.MetadataScraper
 import com.reelvault.app.domain.model.Reel
 import com.reelvault.app.domain.repository.LibraryRepository
 import com.reelvault.app.utils.VaultTime
+import kotlinx.coroutines.flow.first
 
 /**
  * Use case for saving a reel from a shared URL.
  * Handles metadata scraping and reel persistence.
  *
  * This is the primary entry point for the Share Sheet flow.
+ * Enforces the 50-reel vault capacity limit.
  */
 class SaveReelFromUrlUseCase(
     private val libraryRepository: LibraryRepository,
     private val metadataScraper: MetadataScraper
 ) {
+    companion object {
+        private const val MAX_VAULT_CAPACITY = 50
+    }
+
     /**
      * Result of saving a reel from URL.
      */
@@ -36,6 +42,12 @@ class SaveReelFromUrlUseCase(
             val cleanUrl = url.trim()
             if (!isValidUrl(cleanUrl)) {
                 return SaveResult.Error("Invalid URL format")
+            }
+
+            // Check vault capacity before proceeding with extraction
+            val currentCount = libraryRepository.getTotalReelsCount().first()
+            if (currentCount >= MAX_VAULT_CAPACITY) {
+                throw VaultFullException(currentCount)
             }
 
             // Check if reel already exists
@@ -60,6 +72,8 @@ class SaveReelFromUrlUseCase(
             libraryRepository.saveReel(reel)
 
             SaveResult.Success(reel)
+        } catch (e: VaultFullException) {
+            SaveResult.Error("Vault is full (${e.currentCount}/$MAX_VAULT_CAPACITY). Delete some reels to save new ones.")
         } catch (e: Exception) {
             SaveResult.Error(e.message ?: "Failed to save reel")
         }
@@ -142,3 +156,9 @@ class SaveReelFromUrlUseCase(
         return tags
     }
 }
+
+/**
+ * Exception thrown when the vault has reached its maximum capacity of 50 reels.
+ */
+class VaultFullException(val currentCount: Int) : Exception("Vault is full ($currentCount/50 reels). Delete some reels to save new ones.")
+

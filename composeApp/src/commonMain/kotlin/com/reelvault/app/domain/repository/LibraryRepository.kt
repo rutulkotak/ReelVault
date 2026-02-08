@@ -64,4 +64,9 @@ interface LibraryRepository {
      * Move multiple reels to a collection.
      */
     suspend fun moveReelsToCollection(reelIds: List<String>, collectionId: Long?)
+
+    /**
+     * Get the total count of reels in the vault as a reactive Flow.
+     */
+    fun getTotalReelsCount(): Flow<Int>
 }

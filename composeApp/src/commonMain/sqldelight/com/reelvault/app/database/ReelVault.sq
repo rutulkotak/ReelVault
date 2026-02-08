@@ -113,3 +113,8 @@ WHERE id = ?;
 isReelSaved:
 SELECT COUNT(*) > 0 FROM Reel
 WHERE url = ?;
+
+-- Get total count of reels in the vault
+getTotalReelsCount:
+SELECT COUNT(*) FROM Reel;
+

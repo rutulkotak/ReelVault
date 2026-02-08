@@ -112,6 +112,13 @@ class LibraryRepositoryImpl(
         }
     }
 
+    override fun getTotalReelsCount(): Flow<Int> {
+        return queries.getTotalReelsCount()
+            .asFlow()
+            .mapToList(Dispatchers.IO)
+            .map { results -> results.firstOrNull()?.toInt() ?: 0 }
+    }
+
     /**
      * Fetch metadata for a URL using the MetadataScraper.
      * This can be used when saving a reel to auto-populate title and thumbnail.
