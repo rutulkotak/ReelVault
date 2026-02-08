@@ -26,6 +26,7 @@ import com.reelvault.app.domain.model.Collection
 import com.reelvault.app.presentation.base.ObserveEffect
 import com.reelvault.app.presentation.library.LibraryScreen
 import com.reelvault.app.presentation.theme.AuroraColors
+import com.reelvault.app.presentation.tiers.TierSelectionScreen
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -63,6 +64,12 @@ class CollectionsScreen : Screen {
                     // Navigate to Library with filter
                     // We use replaceAll to reset stack and ensure LibraryScreen handles the filter
                     navigator.replaceAll(LibraryScreen(initialCollectionId = effect.collection.id))
+                }
+                is CollectionsContract.Effect.CollectionLimitReached -> {
+                    scope.launch {
+                        snackbarHostState.showSnackbar("🔒 Collection limit reached (${effect.maxCollections}). Upgrade to create more!")
+                    }
+                    navigator.push(TierSelectionScreen())
                 }
             }
         }

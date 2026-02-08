@@ -50,6 +50,7 @@ import com.reelvault.app.presentation.detail.ReelDetailScreen
 import com.reelvault.app.presentation.library.LibraryContract.Intent.*
 import com.reelvault.app.presentation.settings.SettingsScreen
 import com.reelvault.app.presentation.theme.AuroraColors
+import com.reelvault.app.presentation.tiers.TierSelectionScreen
 import com.reelvault.app.utils.AppLifecycleObserver
 import com.reelvault.app.utils.PlatformUrlOpener
 import kotlinx.coroutines.flow.collectLatest
@@ -153,12 +154,15 @@ data class LibraryScreen(val initialCollectionId: Long? = null) : Screen {
 
                     is LibraryContract.Effect.CollectionLimitReached -> {
                         snackbarHostState.showSnackbar("🔒 Collection limit reached (${effect.maxCollections}). Upgrade to save more!")
+                        navigator.push(TierSelectionScreen())
                     }
                     is LibraryContract.Effect.ReelLimitReached -> {
                         snackbarHostState.showSnackbar("🔒 Reel limit reached (${effect.maxReels}). Upgrade to save more!")
+                        navigator.push(TierSelectionScreen())
                     }
                     is LibraryContract.Effect.UpgradeRequired -> {
                         snackbarHostState.showSnackbar("🔒 ${effect.feature} requires ${effect.requiredTier.name} tier")
+                        navigator.push(TierSelectionScreen(highlightTier = effect.requiredTier))
                     }
                 }
             }

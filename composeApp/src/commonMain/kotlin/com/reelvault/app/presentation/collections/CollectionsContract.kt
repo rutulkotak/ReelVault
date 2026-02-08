@@ -35,5 +35,6 @@ object CollectionsContract {
         data class ShowError(val message: String) : Effect
         data class CollectionCreated(val name: String) : Effect
         data class NavigateToCollectionDetail(val collection: Collection) : Effect
+        data class CollectionLimitReached(val maxCollections: Int) : Effect
     }
 }

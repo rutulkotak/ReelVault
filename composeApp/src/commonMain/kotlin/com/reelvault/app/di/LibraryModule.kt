@@ -14,6 +14,7 @@ import com.reelvault.app.domain.usecase.SaveReelUseCase
 import com.reelvault.app.domain.usecase.UpdateReelDetailsUseCase
 import com.reelvault.app.presentation.collections.CollectionsViewModel
 import com.reelvault.app.presentation.library.LibraryViewModel
+import com.reelvault.app.presentation.tiers.TierSelectionViewModel
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.bind
@@ -44,4 +45,5 @@ val libraryModule = module {
     // ViewModels
     viewModelOf(::LibraryViewModel)
     viewModelOf(::CollectionsViewModel)
+    viewModelOf(::TierSelectionViewModel)
 }

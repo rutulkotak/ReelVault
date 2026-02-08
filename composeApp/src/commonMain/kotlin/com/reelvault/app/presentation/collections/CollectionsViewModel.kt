@@ -1,6 +1,7 @@
 package com.reelvault.app.presentation.collections
 
 import androidx.lifecycle.viewModelScope
+import com.reelvault.app.domain.featuregate.FeatureGate
 import com.reelvault.app.domain.model.Collection
 import com.reelvault.app.domain.usecase.CreateCollectionUseCase
 import com.reelvault.app.domain.usecase.DeleteCollectionUseCase
@@ -19,7 +20,8 @@ import kotlinx.coroutines.launch
 class CollectionsViewModel(
     private val getCollectionsUseCase: GetCollectionsUseCase,
     private val createCollectionUseCase: CreateCollectionUseCase,
-    private val deleteCollectionUseCase: DeleteCollectionUseCase
+    private val deleteCollectionUseCase: DeleteCollectionUseCase,
+    private val featureGate: FeatureGate
 ) : BaseViewModel<CollectionsContract.State, CollectionsContract.Intent, CollectionsContract.Effect>(
     initialState = CollectionsContract.State()
 ) {
@@ -62,6 +64,14 @@ class CollectionsViewModel(
     }
 
     private fun onCreateCollection(name: String, color: String, icon: String) {
+        // Check if user can create more collections
+        if (!featureGate.canCreateCollection(currentState.collections.size)) {
+            featureGate.maxCollections?.let { maxCollections ->
+                emitEffect(CollectionsContract.Effect.CollectionLimitReached(maxCollections))
+            }
+            return
+        }
+
         viewModelScope.launch {
             val result = createCollectionUseCase(name, color, icon)
             if (result.isSuccess) {
