@@ -20,8 +20,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -47,7 +49,7 @@ import com.reelvault.app.presentation.components.LibraryHeader
 import com.reelvault.app.presentation.components.ReelGrid
 import com.reelvault.app.presentation.components.SelectionActionBar
 import com.reelvault.app.presentation.detail.ReelDetailScreen
-import com.reelvault.app.presentation.library.LibraryContract.Intent.*
+import com.reelvault.app.presentation.library.LibraryContract.Intent.UpdateReelDetails
 import com.reelvault.app.presentation.settings.SettingsScreen
 import com.reelvault.app.presentation.theme.AuroraColors
 import com.reelvault.app.presentation.tiers.TierSelectionScreen
@@ -153,16 +155,34 @@ data class LibraryScreen(val initialCollectionId: Long? = null) : Screen {
                     }
 
                     is LibraryContract.Effect.CollectionLimitReached -> {
-                        snackbarHostState.showSnackbar("🔒 Collection limit reached (${effect.maxCollections}). Upgrade to save more!")
-                        navigator.push(TierSelectionScreen())
+                        val result = snackbarHostState.showSnackbar(
+                            message = "🔒 Collection limit reached (${effect.maxCollections}). Upgrade to save more!",
+                            actionLabel = "UPGRADE",
+                            duration = SnackbarDuration.Short
+                        )
+                        if (result == SnackbarResult.ActionPerformed) {
+                            navigator.push(TierSelectionScreen())
+                        }
                     }
                     is LibraryContract.Effect.ReelLimitReached -> {
-                        snackbarHostState.showSnackbar("🔒 Reel limit reached (${effect.maxReels}). Upgrade to save more!")
-                        navigator.push(TierSelectionScreen())
+                        val result = snackbarHostState.showSnackbar(
+                            message = "🔒 Reel limit reached (${effect.maxReels}). Upgrade to save more!",
+                            actionLabel = "UPGRADE",
+                            duration = SnackbarDuration.Short
+                        )
+                        if (result == SnackbarResult.ActionPerformed) {
+                            navigator.push(TierSelectionScreen())
+                        }
                     }
                     is LibraryContract.Effect.UpgradeRequired -> {
-                        snackbarHostState.showSnackbar("🔒 ${effect.feature} requires ${effect.requiredTier.name} tier")
-                        navigator.push(TierSelectionScreen(highlightTier = effect.requiredTier))
+                        val result = snackbarHostState.showSnackbar(
+                            message = "🔒 ${effect.feature} requires ${effect.requiredTier.name} tier",
+                            actionLabel = "UPGRADE",
+                            duration = SnackbarDuration.Short
+                        )
+                        if (result == SnackbarResult.ActionPerformed) {
+                            navigator.push(TierSelectionScreen(highlightTier = effect.requiredTier))
+                        }
                     }
                 }
             }

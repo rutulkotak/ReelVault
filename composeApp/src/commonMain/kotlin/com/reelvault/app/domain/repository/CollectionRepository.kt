@@ -15,6 +15,11 @@ interface CollectionRepository {
     fun getCollections(): Flow<List<Collection>>
 
     /**
+     * Get the total number of collections created by the user.
+     */
+    suspend fun getCollectionCount(): Int
+
+    /**
      * Get a single collection by its ID.
      */
     suspend fun getCollectionById(id: Long): Collection?

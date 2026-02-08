@@ -31,6 +31,9 @@ LEFT JOIN Reel ON Reel.collectionId = Collection.id
 GROUP BY Collection.id
 ORDER BY Collection.name;
 
+getCollectionCount:
+SELECT COUNT(*) FROM Collection;
+
 getCollectionById:
 SELECT * FROM Collection
 WHERE id = ?;
@@ -57,6 +60,10 @@ SELECT last_insert_rowid();
 getAllReels:
 SELECT * FROM Reel
 ORDER BY createdAt DESC;
+
+-- Get count of all saved reels
+getReelCount:
+SELECT COUNT(*) FROM Reel;
 
 -- Get reels by collection
 getReelsByCollection:
@@ -113,8 +120,3 @@ WHERE id = ?;
 isReelSaved:
 SELECT COUNT(*) > 0 FROM Reel
 WHERE url = ?;
-
--- Get total count of reels in the vault
-getTotalReelsCount:
-SELECT COUNT(*) FROM Reel;
-

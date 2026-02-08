@@ -37,6 +37,10 @@ class CollectionRepositoryImpl(
             }
     }
 
+    override suspend fun getCollectionCount(): Int = withContext(Dispatchers.IO) {
+        queries.getCollectionCount().executeAsOne().toInt()
+    }
+
     override suspend fun getCollectionById(id: Long): Collection? = withContext(Dispatchers.IO) {
         queries.getCollectionById(id).executeAsOneOrNull()?.let { result ->
             Collection(

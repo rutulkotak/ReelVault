@@ -32,11 +32,15 @@ class LibraryRepositoryImpl(
             }
     }
 
+    override suspend fun getReelCount(): Int = withContext(Dispatchers.IO) {
+        queries.getReelCount().executeAsOne().toInt()
+    }
+
     override suspend fun getReelById(id: String): Reel? = withContext(Dispatchers.IO) {
         queries.getReelById(id).executeAsOneOrNull()?.toDomainModel()
     }
 
-    override suspend fun saveReel(reel: Reel) = withContext(Dispatchers.IO) {
+    override suspend fun saveReel(reel: Reel): Unit = withContext(Dispatchers.IO) {
         queries.insertReel(
             id = reel.id,
             url = reel.url,
@@ -49,7 +53,7 @@ class LibraryRepositoryImpl(
         )
     }
 
-    override suspend fun deleteReel(id: String) = withContext(Dispatchers.IO) {
+    override suspend fun deleteReel(id: String): Unit = withContext(Dispatchers.IO) {
         queries.deleteReelById(id)
     }
 
@@ -69,7 +73,7 @@ class LibraryRepositoryImpl(
         notes: String?,
         tags: List<String>,
         collectionId: Long?
-    ) = withContext(Dispatchers.IO) {
+    ): Unit = withContext(Dispatchers.IO) {
         queries.updateReelDetails(
             title = title,
             notes = notes,
@@ -110,13 +114,6 @@ class LibraryRepositoryImpl(
                 )
             }
         }
-    }
-
-    override fun getTotalReelsCount(): Flow<Int> {
-        return queries.getTotalReelsCount()
-            .asFlow()
-            .mapToList(Dispatchers.IO)
-            .map { results -> results.firstOrNull()?.toInt() ?: 0 }
     }
 
     /**

@@ -176,14 +176,6 @@ class LibraryViewModel(
      * Checks feature gate limits before attempting to save.
      */
     private fun onSaveReel(url: String) {
-        // Check if user can save more reels
-        if (!featureGate.canSaveReel(currentState.reels.size)) {
-            featureGate.maxReelSaves?.let { maxReels ->
-                emitEffect(LibraryContract.Effect.ReelLimitReached(maxReels))
-            }
-            return
-        }
-
         viewModelScope.launch {
             // Show capturing state
             updateState { copy(isCapturing = true, capturingUrl = url) }
@@ -201,6 +193,10 @@ class LibraryViewModel(
                 is SaveReelFromUrlUseCase.SaveResult.Error -> {
                     updateState { copy(isCapturing = false, capturingUrl = null) }
                     emitEffect(LibraryContract.Effect.ReelSaveFailed(result.message))
+                }
+                is SaveReelFromUrlUseCase.SaveResult.LimitReached -> {
+                    updateState { copy(isCapturing = false, capturingUrl = null) }
+                    emitEffect(LibraryContract.Effect.ReelLimitReached(result.maxReels))
                 }
             }
         }
