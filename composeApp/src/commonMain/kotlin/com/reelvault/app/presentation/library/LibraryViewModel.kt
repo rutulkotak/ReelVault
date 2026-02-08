@@ -1,6 +1,7 @@
 package com.reelvault.app.presentation.library
 
 import androidx.lifecycle.viewModelScope
+import com.reelvault.app.domain.featuregate.FeatureGate
 import com.reelvault.app.domain.model.Reel
 import com.reelvault.app.domain.usecase.DeleteReelsUseCase
 import com.reelvault.app.domain.usecase.GetCollectionsUseCase
@@ -26,13 +27,29 @@ class LibraryViewModel(
     private val saveReelFromUrlUseCase: SaveReelFromUrlUseCase,
     private val deleteReelsUseCase: DeleteReelsUseCase,
     private val updateReelDetailsUseCase: UpdateReelDetailsUseCase,
-    private val moveReelsToCollectionUseCase: MoveReelsToCollectionUseCase
+    private val moveReelsToCollectionUseCase: MoveReelsToCollectionUseCase,
+    private val featureGate: FeatureGate
 ) : BaseViewModel<LibraryContract.State, LibraryContract.Intent, LibraryContract.Effect>(
     initialState = LibraryContract.State()
 ) {
 
     init {
+        initializeFeatureGateState()
         loadData()
+    }
+
+    /**
+     * Initialize state with feature gate properties.
+     */
+    private fun initializeFeatureGateState() {
+        updateState {
+            copy(
+                userTier = featureGate.currentTier,
+                hasAIAccess = featureGate.hasAIAccess,
+                hasCloudAccess = featureGate.hasCloudAccess,
+                hasAdvancedSearchAccess = featureGate.hasAdvancedSearchAccess
+            )
+        }
     }
 
     override fun onIntent(intent: LibraryContract.Intent) {
@@ -71,7 +88,17 @@ class LibraryViewModel(
             updateState { copy(isLoading = true, errorMessage = null) }
         }
         .onEach { (reels, collections) ->
-            updateState { copy(isLoading = false, reels = reels, collections = collections) }
+            updateState {
+                copy(
+                    isLoading = false,
+                    reels = reels,
+                    collections = collections,
+                    canSaveMoreReels = featureGate.canSaveReel(reels.size),
+                    canCreateMoreCollections = featureGate.canCreateCollection(collections.size),
+                    remainingReelSaves = featureGate.remainingReelSaves(reels.size),
+                    remainingCollections = featureGate.remainingCollections(collections.size)
+                )
+            }
         }
         .catch { throwable ->
             updateState {
@@ -146,8 +173,17 @@ class LibraryViewModel(
     /**
      * Handle saving a reel from a shared URL.
      * Shows "Capturing..." state while metadata is being fetched.
+     * Checks feature gate limits before attempting to save.
      */
     private fun onSaveReel(url: String) {
+        // Check if user can save more reels
+        if (!featureGate.canSaveReel(currentState.reels.size)) {
+            featureGate.maxReelSaves?.let { maxReels ->
+                emitEffect(LibraryContract.Effect.ReelLimitReached(maxReels))
+            }
+            return
+        }
+
         viewModelScope.launch {
             // Show capturing state
             updateState { copy(isCapturing = true, capturingUrl = url) }

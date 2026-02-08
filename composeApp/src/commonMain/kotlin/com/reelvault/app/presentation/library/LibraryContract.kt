@@ -1,5 +1,6 @@
 package com.reelvault.app.presentation.library
 
+import com.reelvault.app.domain.featuregate.UserTier
 import com.reelvault.app.domain.model.Collection
 import com.reelvault.app.domain.model.Reel
 import com.reelvault.app.presentation.base.MviContract
@@ -24,7 +25,16 @@ object LibraryContract {
         val selectedPlatform: String? = null,  // null = "All"
         val selectedItemIds: Set<String> = emptySet(),  // For multi-selection
         val selectedCollectionId: Long? = null,  // null = show all, -1 = uncategorized
-        val collections: List<Collection> = emptyList()
+        val collections: List<Collection> = emptyList(),
+        // Feature Gate properties
+        val userTier: UserTier = UserTier.SCOUTER,
+        val canSaveMoreReels: Boolean = true,
+        val canCreateMoreCollections: Boolean = true,
+        val remainingReelSaves: Int? = null,  // null = unlimited
+        val remainingCollections: Int? = null,  // null = unlimited
+        val hasAIAccess: Boolean = false,
+        val hasCloudAccess: Boolean = false,
+        val hasAdvancedSearchAccess: Boolean = false
     ) : MviContract.UiState {
 
         /**
@@ -117,5 +127,12 @@ object LibraryContract {
         data class ReelDetailsUpdated(val title: String) : Effect
         data class ReelCollectionUpdated(val reelId: String) : Effect
         data class ReelsMovedToCollection(val count: Int) : Effect
+
+        /**
+         * Feature Gate Effects
+         */
+        data class ReelLimitReached(val maxReels: Int) : Effect
+        data class CollectionLimitReached(val maxCollections: Int) : Effect
+        data class UpgradeRequired(val feature: String, val requiredTier: UserTier) : Effect
     }
 }

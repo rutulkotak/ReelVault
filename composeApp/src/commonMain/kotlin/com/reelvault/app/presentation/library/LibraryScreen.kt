@@ -47,6 +47,7 @@ import com.reelvault.app.presentation.components.LibraryHeader
 import com.reelvault.app.presentation.components.ReelGrid
 import com.reelvault.app.presentation.components.SelectionActionBar
 import com.reelvault.app.presentation.detail.ReelDetailScreen
+import com.reelvault.app.presentation.library.LibraryContract.Intent.*
 import com.reelvault.app.presentation.settings.SettingsScreen
 import com.reelvault.app.presentation.theme.AuroraColors
 import com.reelvault.app.utils.AppLifecycleObserver
@@ -109,7 +110,7 @@ data class LibraryScreen(val initialCollectionId: Long? = null) : Screen {
                                 collections = state.collections, // Fix: Pass collections from ViewModel state
                                 onSave = { title, notes, tags, collectionId ->
                                     viewModel.onIntent(
-                                        LibraryContract.Intent.UpdateReelDetails(
+                                        UpdateReelDetails(
                                             id = effect.reel.id,
                                             title = title,
                                             notes = notes,
@@ -148,6 +149,16 @@ data class LibraryScreen(val initialCollectionId: Long? = null) : Screen {
                     }
                     is LibraryContract.Effect.ReelsMovedToCollection -> {
                         snackbarHostState.showSnackbar("✅ ${effect.count} reel(s) moved")
+                    }
+
+                    is LibraryContract.Effect.CollectionLimitReached -> {
+                        snackbarHostState.showSnackbar("🔒 Collection limit reached (${effect.maxCollections}). Upgrade to save more!")
+                    }
+                    is LibraryContract.Effect.ReelLimitReached -> {
+                        snackbarHostState.showSnackbar("🔒 Reel limit reached (${effect.maxReels}). Upgrade to save more!")
+                    }
+                    is LibraryContract.Effect.UpgradeRequired -> {
+                        snackbarHostState.showSnackbar("🔒 ${effect.feature} requires ${effect.requiredTier.name} tier")
                     }
                 }
             }

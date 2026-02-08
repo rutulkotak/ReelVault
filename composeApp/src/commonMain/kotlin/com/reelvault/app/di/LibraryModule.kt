@@ -1,5 +1,7 @@
 package com.reelvault.app.di
 
+import com.reelvault.app.data.featuregate.FeatureGateImpl
+import com.reelvault.app.domain.featuregate.FeatureGate
 import com.reelvault.app.domain.usecase.CreateCollectionUseCase
 import com.reelvault.app.domain.usecase.DeleteCollectionUseCase
 import com.reelvault.app.domain.usecase.DeleteReelsUseCase
@@ -14,6 +16,7 @@ import com.reelvault.app.presentation.collections.CollectionsViewModel
 import com.reelvault.app.presentation.library.LibraryViewModel
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.viewModelOf
+import org.koin.dsl.bind
 import org.koin.dsl.module
 
 /**
@@ -21,6 +24,9 @@ import org.koin.dsl.module
  * Provides UseCases and ViewModel dependencies.
  */
 val libraryModule = module {
+    // Feature Gate
+    single { FeatureGateImpl() } bind FeatureGate::class
+
     // Reel UseCases
     factoryOf(::GetSavedReelsUseCase)
     factoryOf(::SaveReelUseCase)
