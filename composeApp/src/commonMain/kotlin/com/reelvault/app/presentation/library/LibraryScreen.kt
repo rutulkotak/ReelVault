@@ -325,6 +325,11 @@ private fun LibraryContent(
                             onReelLongClick = { reel ->
                                 onIntent(LibraryContract.Intent.ToggleSelection(reel.id))
                             },
+                            userTier = state.userTier,
+                            onPromoClick = {
+                                // Navigate to tier selection screen when promo card is clicked
+                                navigator.push(TierSelectionScreen())
+                            },
                             modifier = Modifier.fillMaxSize()
                         )
                     }
