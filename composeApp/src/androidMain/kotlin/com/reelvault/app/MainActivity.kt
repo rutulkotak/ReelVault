@@ -6,22 +6,26 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.lifecycleScope
 import com.reelvault.app.data.settings.AppSettings
+import com.reelvault.app.data.storage.SharedDataStorage
 import com.reelvault.app.domain.usecase.CheckDailyNudgeUseCase
-import com.reelvault.app.presentation.library.LibraryContract
-import com.reelvault.app.presentation.library.LibraryViewModel
 import com.reelvault.app.utils.PlatformUrlOpener
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
-import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MainActivity : ComponentActivity() {
 
     private val appSettings: AppSettings by inject()
     private val checkDailyNudgeUseCase: CheckDailyNudgeUseCase by inject()
-    private val libraryViewModel: LibraryViewModel by viewModel()
+    private val sharedDataStorage: SharedDataStorage by inject()
+
+    companion object {
+        // Global state to trigger URL check when activity resumes
+        val resumeTrigger = mutableLongStateOf(0L)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -53,7 +57,18 @@ class MainActivity : ComponentActivity() {
     }
 
     /**
-     * Extract shared URL from the intent and dispatch to LibraryViewModel.
+     * Called when activity resumes (comes from background).
+     * Triggers LibraryScreen to check for pending shared URLs.
+     */
+    override fun onResume() {
+        super.onResume()
+        // Increment trigger to cause LibraryScreen to check for pending URLs
+        resumeTrigger.longValue = System.currentTimeMillis()
+    }
+
+    /**
+     * Extract shared URL from the intent and store it for the LibraryScreen to process.
+     * This ensures the correct ViewModel instance handles the URL.
      */
     private fun handleShareIntent(intent: Intent?) {
         if (intent?.action == Intent.ACTION_SEND && intent.type == "text/plain") {
@@ -61,8 +76,8 @@ class MainActivity : ComponentActivity() {
                 // Extract URL from shared text (may contain additional text)
                 val url = extractUrl(sharedText)
                 if (url != null) {
-                    // Dispatch SaveReel intent to ViewModel
-                    libraryViewModel.onIntent(LibraryContract.Intent.SaveReel(url))
+                    // Store URL in SharedDataStorage for LibraryScreen to process
+                    sharedDataStorage.setPendingUrl(url)
                 }
             }
         }

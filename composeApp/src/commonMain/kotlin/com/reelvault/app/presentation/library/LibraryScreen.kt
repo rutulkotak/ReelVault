@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import com.reelvault.app.data.storage.SharedDataStorage
 import com.reelvault.app.presentation.collections.CollectionsScreen
 import com.reelvault.app.presentation.components.EmptyLibraryState
 import com.reelvault.app.presentation.components.LibraryHeader
@@ -48,8 +49,10 @@ import com.reelvault.app.presentation.components.SelectionActionBar
 import com.reelvault.app.presentation.detail.ReelDetailScreen
 import com.reelvault.app.presentation.settings.SettingsScreen
 import com.reelvault.app.presentation.theme.AuroraColors
+import com.reelvault.app.utils.AppLifecycleObserver
 import com.reelvault.app.utils.PlatformUrlOpener
 import kotlinx.coroutines.flow.collectLatest
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -67,6 +70,19 @@ data class LibraryScreen(val initialCollectionId: Long? = null) : Screen {
         val state by viewModel.uiState.collectAsState()
         val snackbarHostState = remember { SnackbarHostState() }
         val navigator = LocalNavigator.currentOrThrow
+        val sharedDataStorage: SharedDataStorage = koinInject()
+
+        // Observe app lifecycle - this state changes when app resumes
+        val resumeTrigger by AppLifecycleObserver.observeResume()
+
+        // Check for pending shared URLs whenever the app resumes
+        // This runs on initial load AND when activity resumes from background
+        LaunchedEffect(resumeTrigger) {
+            val pendingUrl = sharedDataStorage.getPendingUrl()
+            if (pendingUrl != null) {
+                viewModel.onIntent(LibraryContract.Intent.SaveReel(pendingUrl))
+            }
+        }
 
         // Handle initial filter
         LaunchedEffect(initialCollectionId) {

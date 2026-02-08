@@ -18,7 +18,7 @@ class SaveReelFromUrlUseCase(
     private val metadataScraper: MetadataScraper
 ) {
     companion object {
-        private const val MAX_VAULT_CAPACITY = 50
+        private const val MAX_VAULT_CAPACITY = 3
     }
 
     /**
