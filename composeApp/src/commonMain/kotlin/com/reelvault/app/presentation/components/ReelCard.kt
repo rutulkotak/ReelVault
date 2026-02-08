@@ -145,8 +145,7 @@ fun ReelCard(
                             )
                         }
                     },
-                    onFailure = { error ->
-                        println("RK:Error: $error")
+                    onFailure = { _ ->
                         // Fallback to platform icon
                         Box(
                             modifier = Modifier

@@ -37,13 +37,16 @@ class SaveReelFromUrlUseCase(
     suspend operator fun invoke(url: String): SaveResult {
         return try {
             // Validate URL format
-            val cleanUrl = url.trim()
-            if (!isValidUrl(cleanUrl)) {
+            val rawUrl = url.trim()
+            if (!isValidUrl(rawUrl)) {
                 return SaveResult.Error("Invalid URL format")
             }
 
-            // Check if reel already exists
-            if (libraryRepository.isReelSaved(cleanUrl)) {
+            // Normalize URL to handle duplicates with different query params (e.g., YouTube 'si')
+            val normalizedUrl = normalizeUrl(rawUrl)
+
+            // Check if reel already exists using normalized URL
+            if (libraryRepository.isReelSaved(normalizedUrl)) {
                 return SaveResult.AlreadyExists
             }
 
@@ -53,16 +56,16 @@ class SaveReelFromUrlUseCase(
                 return SaveResult.LimitReached(featureGate.maxReelSaves ?: 0)
             }
 
-            // Scrape metadata from URL
-            val metadata = metadataScraper.scrapeMetadata(cleanUrl)
+            // Scrape metadata from normalized URL
+            val metadata = metadataScraper.scrapeMetadata(normalizedUrl)
 
             // Create reel with scraped metadata or defaults
             val reel = Reel(
                 id = generateUuid(),
-                url = cleanUrl,
-                title = metadata?.title ?: extractTitleFromUrl(cleanUrl),
+                url = normalizedUrl,
+                title = metadata?.title ?: extractTitleFromUrl(normalizedUrl),
                 thumbnail = metadata?.thumbnail ?: "",
-                tags = extractTagsFromUrl(cleanUrl),
+                tags = extractTagsFromUrl(normalizedUrl),
                 createdAt = VaultTime().getCurrentEpochMillis()
             )
 
@@ -72,6 +75,35 @@ class SaveReelFromUrlUseCase(
             SaveResult.Success(reel)
         } catch (e: Exception) {
             SaveResult.Error(e.message ?: "Failed to save reel")
+        }
+    }
+
+    /**
+     * Normalizes social media URLs by stripping tracking parameters.
+     * e.g., strips 'si' from YouTube and 'igsh' from Instagram.
+     */
+    private fun normalizeUrl(url: String): String {
+        return try {
+            var normalized = url.trim()
+            
+            // Common tracking parameters used by social platforms
+            val trackingParams = listOf("si=", "igsh=", "utm_", "fbclid=", "s=")
+            
+            if (normalized.contains("?") && trackingParams.any { normalized.contains(it) }) {
+                // For most social platforms, the content ID is in the path, 
+                // and query params are for tracking/referrals.
+                if (normalized.contains("youtube.com/shorts/") || 
+                    normalized.contains("youtu.be/") ||
+                    normalized.contains("instagram.com/reel/") ||
+                    normalized.contains("tiktok.com/")) {
+                    normalized = normalized.substringBefore("?")
+                }
+            }
+
+            // Remove trailing slash for consistency
+            normalized.removeSuffix("/")
+        } catch (e: Exception) {
+            url
         }
     }
 
@@ -129,24 +161,25 @@ class SaveReelFromUrlUseCase(
      */
     private fun extractTagsFromUrl(url: String): List<String> {
         val tags = mutableListOf<String>()
+        val lowercaseUrl = url.lowercase()
 
         when {
-            url.contains("instagram.com") || url.contains("instagr.am") -> {
+            lowercaseUrl.contains("instagram.com") || lowercaseUrl.contains("instagr.am") -> {
                 tags.add("Instagram")
-                if (url.contains("/reel/") || url.contains("/reels/")) {
+                if (lowercaseUrl.contains("/reel/") || lowercaseUrl.contains("/reels/")) {
                     tags.add("Reels")
                 }
             }
-            url.contains("tiktok.com") -> tags.add("TikTok")
-            url.contains("youtube.com") || url.contains("youtu.be") -> {
+            lowercaseUrl.contains("tiktok.com") -> tags.add("TikTok")
+            lowercaseUrl.contains("youtube.com") || lowercaseUrl.contains("youtu.be") -> {
                 tags.add("YouTube")
-                if (url.contains("/shorts/")) {
+                if (lowercaseUrl.contains("/shorts/")) {
                     tags.add("Shorts")
                 }
             }
-            url.contains("twitter.com") || url.contains("x.com") -> tags.add("X")
-            url.contains("facebook.com") || url.contains("fb.watch") -> tags.add("Facebook")
-            url.contains("snapchat.com") -> tags.add("Snapchat")
+            lowercaseUrl.contains("twitter.com") || lowercaseUrl.contains("x.com") -> tags.add("X")
+            lowercaseUrl.contains("facebook.com") || lowercaseUrl.contains("fb.watch") -> tags.add("Facebook")
+            lowercaseUrl.contains("snapchat.com") -> tags.add("Snapchat")
         }
 
         return tags
