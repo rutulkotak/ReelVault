@@ -3,7 +3,7 @@ package com.reelvault.app.domain.usecase
 import com.reelvault.app.data.remote.MetadataScraper
 import com.reelvault.app.domain.model.Reel
 import com.reelvault.app.domain.repository.LibraryRepository
-import kotlinx.datetime.Clock
+import com.reelvault.app.utils.VaultTime
 
 /**
  * Use case for saving a reel from a shared URL.
@@ -53,7 +53,7 @@ class SaveReelFromUrlUseCase(
                 title = metadata?.title ?: extractTitleFromUrl(cleanUrl),
                 thumbnail = metadata?.thumbnail ?: "",
                 tags = extractTagsFromUrl(cleanUrl),
-                createdAt = Clock.System.now()
+                createdAt = VaultTime().getCurrentEpochMillis()
             )
 
             // Save to repository

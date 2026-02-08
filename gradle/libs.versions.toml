@@ -14,7 +14,6 @@ junit = "4.13.2"
 kamel = "1.0.9"
 koin = "4.0.0"
 kotlin = "2.3.0"
-kotlinx-datetime = "0.6.1"
 ktor = "3.0.3"
 material3 = "1.10.0-alpha05"
 multiplatformSettings = "1.2.0"
@@ -53,7 +52,6 @@ voyager-transitions = { module = "cafe.adriel.voyager:voyager-transitions", vers
 voyager-koin = { module = "cafe.adriel.voyager:voyager-koin", version.ref = "voyager" }
 
 # KotlinX
-kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 
 # Ktor
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }

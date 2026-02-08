@@ -11,7 +11,6 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
-import kotlinx.datetime.Instant
 
 /**
  * Implementation of LibraryRepository using SQLDelight for local persistence
@@ -44,7 +43,7 @@ class LibraryRepositoryImpl(
             title = reel.title,
             thumbnailUrl = reel.thumbnail,
             tags = reel.tags.joinToString(","),
-            createdAt = reel.createdAt.toEpochMilliseconds(),
+            createdAt = reel.createdAt,
             collectionId = reel.collectionId,
             notes = reel.notes
         )
@@ -132,7 +131,7 @@ private fun com.reelvault.app.database.Reel.toDomainModel(): Reel {
         title = title,
         thumbnail = thumbnailUrl,
         tags = if (tags.isBlank()) emptyList() else tags.split(",").map { it.trim() },
-        createdAt = Instant.fromEpochMilliseconds(createdAt),
+        createdAt = createdAt,
         collectionId = collectionId,
         notes = notes
     )

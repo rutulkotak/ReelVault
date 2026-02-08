@@ -68,9 +68,6 @@ kotlin {
             implementation(libs.voyager.transitions)
             implementation(libs.voyager.koin)
 
-            // KotlinX
-            implementation(libs.kotlinx.datetime)
-
             // Ktor
             implementation(libs.ktor.client.core)
 

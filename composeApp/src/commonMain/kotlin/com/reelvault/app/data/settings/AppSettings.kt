@@ -3,7 +3,7 @@ package com.reelvault.app.data.settings
 import com.russhwolf.settings.Settings
 import com.russhwolf.settings.get
 import com.russhwolf.settings.set
-import kotlinx.datetime.Clock
+import com.reelvault.app.utils.VaultTime
 
 /**
  * App-wide settings manager using multiplatform-settings.
@@ -58,7 +58,7 @@ class AppSettings(private val settings: Settings) {
      * Update the last app open time to now.
      */
     fun updateLastAppOpenTime() {
-        lastAppOpenTime = Clock.System.now().epochSeconds * 1000L
+        lastAppOpenTime = VaultTime().getCurrentEpochMillis()
     }
 
     /**
@@ -67,7 +67,7 @@ class AppSettings(private val settings: Settings) {
     fun shouldShowDailyNudge(): Boolean {
         if (!isDailyNudgeEnabled) return false
 
-        val nowMillis = Clock.System.now().epochSeconds * 1000L
+        val nowMillis = VaultTime().getCurrentEpochMillis()
         val millisSinceLastOpen = nowMillis - lastAppOpenTime
         val hoursSinceLastOpen = millisSinceLastOpen / (1000 * 60 * 60)
 
