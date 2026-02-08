@@ -1,9 +1,13 @@
 package com.reelvault.app
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import cafe.adriel.voyager.navigator.Navigator
 import com.reelvault.app.presentation.splash.SplashScreen
 import com.reelvault.app.presentation.theme.AuroraTheme
+import io.kamel.core.config.KamelConfig
+import io.kamel.image.config.Default
+import io.kamel.image.config.LocalKamelConfig
 
 /**
  * Main App Composable
@@ -12,9 +16,14 @@ import com.reelvault.app.presentation.theme.AuroraTheme
 @Composable
 fun App() {
     AuroraTheme {
-        Navigator(
-            SplashScreen()
-        )
+        CompositionLocalProvider(
+            LocalKamelConfig provides KamelConfig.Default
+        ) {
+            // Your Navigation / Screens go here
+            Navigator(
+                SplashScreen()
+            )
+        }
     }
 }
 

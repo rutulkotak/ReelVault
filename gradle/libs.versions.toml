@@ -72,6 +72,7 @@ sqldelight-native = { module = "app.cash.sqldelight:native-driver", version.ref 
 
 # Kamel - Image loading
 kamel-image = { module = "media.kamel:kamel-image", version.ref = "kamel" }
+kamel-image-default = { module = "media.kamel:kamel-image-default", version.ref = "kamel" }
 
 # Multiplatform Settings
 multiplatform-settings = { module = "com.russhwolf:multiplatform-settings", version.ref = "multiplatformSettings" }

@@ -80,6 +80,7 @@ kotlin {
 
             // Kamel - Image loading
             implementation(libs.kamel.image)
+            implementation(libs.kamel.image.default)
 
             // Multiplatform Settings
             implementation(libs.multiplatform.settings)
